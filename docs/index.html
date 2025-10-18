@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat básico (Frontend)</title>
+    <style>
+      :root { font-family: system-ui, sans-serif; }
+      body { margin: 0; display: grid; grid-template-rows: auto auto 1fr auto; height: 100vh; }
+      header { padding: 12px 16px; background: #0f172a; color: white; }
+      .config { padding: 8px 16px; background: #111827; color: #e5e7eb; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+      .config input { width: 100%; }
+      main { padding: 12px 16px; overflow: auto; background: #f8fafc; }
+      footer { padding: 12px 16px; background: #e2e8f0; display: grid; gap: 8px; grid-template-columns: 120px 1fr auto auto; }
+      #log { display: flex; flex-direction: column; gap: 6px; }
+      .msg { background: white; padding: 8px 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
+      .sys { color: #475569; font-style: italic; }
+      input, button { font: inherit; padding: 8px 10px; }
+      button { background: #0ea5e9; color: white; border: 0; border-radius: 6px; cursor: pointer; }
+      button:hover { filter: brightness(0.95); }
+      #clear { background:#64748b }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Chat básico</strong>
+      <span style="opacity:0.7"> · Frontend estático</span>
+    </header>
+
+    <section class="config">
+      <div>
+        <small>Backend URL</small>
+        <input id="backend" placeholder="http://localhost:3000" />
+      </div>
+      <button id="connect">Conectar</button>
+    </section>
+
+    <main>
+      <div id="log"></div>
+    </main>
+
+    <footer>
+      <input id="user" placeholder="tu nombre" />
+      <input id="text" placeholder="escribe un mensaje" />
+      <button id="send">Enviar</button>
+      <button id="clear">Limpiar</button>
+    </footer>
+
+    <script>
+      const log = document.getElementById('log');
+      const user = document.getElementById('user');
+      const text = document.getElementById('text');
+      const send = document.getElementById('send');
+      const clearBtn = document.getElementById('clear');
+      const backend = document.getElementById('backend');
+      const connectBtn = document.getElementById('connect');
+
+      let es = null;
+      const qs = new URLSearchParams(location.search);
+      const saved = localStorage.getItem('backend_url');
+      backend.value = qs.get('api') || saved || 'http://localhost:3000';
+
+      function addLine(html, cls = '') {
+        const div = document.createElement('div');
+        div.className = `msg ${cls}`;
+        div.innerHTML = html;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function setStatus(msg) { addLine(msg, 'sys'); }
+
+      function connect() {
+        const base = backend.value.replace(/\/$/, '');
+        if (es) { try { es.close(); } catch {} es = null; }
+        localStorage.setItem('backend_url', base);
+        setStatus(`🔌 conectando a ${base} ...`);
+        try {
+          es = new EventSource(base + '/events');
+        } catch (e) {
+          setStatus('❌ no se pudo abrir EventSource');
+          return;
+        }
+        es.onmessage = (ev) => {
+          try {
+            const data = JSON.parse(ev.data);
+            if (data.type === 'system') {
+              setStatus('🟢 conectado');
+            } else if (data.type === 'message') {
+              const time = new Date(data.ts).toLocaleTimeString();
+              const name = (data.user || 'anon');
+              addLine(`<strong>${name}</strong> <small>${time}</small><br>${escapeHtml(data.text)}`);
+            } else if (data.type === 'clear') {
+              log.innerHTML = '';
+            }
+          } catch {}
+        };
+        es.onerror = () => setStatus('⚠️ conexión perdida, reintentando...');
+      }
+
+      function doSend() {
+        const base = backend.value.replace(/\/$/, '');
+        const payload = { user: user.value || 'anon', text: text.value };
+        if (!payload.text.trim()) return;
+        fetch(base + '/message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(res => {
+          if (!res.ok) throw new Error('error enviando');
+          text.value = '';
+          text.focus();
+        }).catch(() => setStatus('❌ no se pudo enviar'));
+      }
+
+      function doClear() {
+        const base = backend.value.replace(/\/$/, '');
+        fetch(base + '/clear', { method: 'POST' })
+          .then(res => { if (!res.ok) throw new Error('error clear'); })
+          .catch(() => setStatus('❌ no se pudo limpiar'));
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+      }
+
+      connectBtn.addEventListener('click', connect);
+      send.addEventListener('click', () => doSend());
+      text.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
+      clearBtn.addEventListener('click', () => doClear());
+
+      // Autoconectar al cargar
+      connect();
+    </script>
+  </body>
+  </html>
+
