@@ -1,0 +1,13 @@
+{
+  "name": "chatboot-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend básico de chat usando Node.js y Server-Sent Events (sin dependencias)",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

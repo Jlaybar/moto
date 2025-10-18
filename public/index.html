@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat básico (SSE)</title>
+    <style>
+      :root { font-family: system-ui, sans-serif; }
+      body { margin: 0; display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
+      header { padding: 12px 16px; background: #0f172a; color: white; }
+      main { padding: 12px 16px; overflow: auto; background: #f8fafc; }
+      footer { padding: 12px 16px; background: #e2e8f0; display: grid; gap: 8px; grid-template-columns: 120px 1fr auto auto; }
+      #log { display: flex; flex-direction: column; gap: 6px; }
+      .msg { background: white; padding: 8px 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
+      .sys { color: #475569; font-style: italic; }
+      input, button { font: inherit; padding: 8px 10px; }
+      button { background: #0ea5e9; color: white; border: 0; border-radius: 6px; cursor: pointer; }
+      button:hover { filter: brightness(0.95); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Chat básico</strong>
+      <span style="opacity:0.7"> · SSE sin dependencias</span>
+    </header>
+    <main>
+      <div id="log"></div>
+    </main>
+    <footer>
+      <input id="user" placeholder="tu nombre" />
+      <input id="text" placeholder="escribe un mensaje" />
+      <button id="send">Enviar</button>
+      <button id="clear" style="background:#64748b">Limpiar</button>
+    </footer>
+
+    <script>
+      // Sugerencia si se abre como archivo local
+      if (location.protocol !== 'http:' && location.protocol !== 'https:') {
+        alert('Abre este cliente desde http://localhost:3000/ (no como archivo local).');
+      }
+      const log = document.getElementById('log');
+      const user = document.getElementById('user');
+      const text = document.getElementById('text');
+      const send = document.getElementById('send');
+      const clearBtn = document.getElementById('clear');
+
+      function addLine(html, cls = '') {
+        const div = document.createElement('div');
+        div.className = `msg ${cls}`;
+        div.innerHTML = html;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      // Conectarse al stream SSE
+      const es = new EventSource('/events');
+      es.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          if (data.type === 'system') {
+            addLine(`🟢 ${data.text}`, 'sys');
+          } else if (data.type === 'message') {
+            const time = new Date(data.ts).toLocaleTimeString();
+            const name = (data.user || 'anon');
+            addLine(`<strong>${name}</strong> <small>${time}</small><br>${escapeHtml(data.text)}`);
+          } else if (data.type === 'clear') {
+            // Limpiar completamente el historial sin añadir mensajes
+            log.innerHTML = '';
+          }
+        } catch { /* ignore */ }
+      };
+      es.onerror = () => {
+        addLine('⚠️ conexión perdida, reintentando...', 'sys');
+      };
+
+      send.addEventListener('click', () => doSend());
+      text.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
+      clearBtn.addEventListener('click', () => doClear());
+
+      function doSend() {
+        const payload = { user: user.value || 'anon', text: text.value };
+        if (!payload.text.trim()) return;
+        fetch('/message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(res => {
+          if (!res.ok) throw new Error('error enviando');
+          text.value = '';
+          text.focus();
+        }).catch(() => addLine('❌ no se pudo enviar', 'sys'));
+      }
+
+      function doClear() {
+        fetch('/clear', { method: 'POST' })
+          .then(res => { if (!res.ok) throw new Error('error clear'); })
+          .catch(() => addLine('❌ no se pudo limpiar', 'sys'));
+      }
+
+      function escapeHtml(s) {
+        return s.replace(/[&<>"']/g, c => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+      }
+    </script>
+  </body>
+  </html>

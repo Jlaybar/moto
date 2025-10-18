@@ -1,0 +1,16 @@
+### Enviar mensaje
+
+POST http://localhost:3000/message
+Content-Type: application/json
+
+{
+  "user": "pepe2",
+  "text": "{{$datetime rfc1123}}"
+}
+
+### Limpiar chat
+POST http://localhost:3000/clear
+
+### Verificar estado del servidor
+GET http://localhost:3000/healthz
+
