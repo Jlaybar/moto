@@ -8,6 +8,14 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Ensure SQLite path exists and set default DATABASE_URL if missing
+const dataDir = path.join(process.cwd(), 'prisma');
+const dbFile = path.join(dataDir, 'dev.db');
+try { fs.mkdirSync(dataDir, { recursive: true }); } catch {}
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'file:' + dbFile.replace(/\\/g, '/');
+}
+
 // SSE clients
 const CLIENTS = new Set();
 const app = express();
