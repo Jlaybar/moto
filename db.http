@@ -9,7 +9,7 @@ Content-Type: application/json
 
 {
 "email": "user{{$timestamp}}@example.com",
-"password": "secret"
+"password": "1234567"
 }
 
 ### Stream SSE (puede no mostrarse bien en REST Client)
