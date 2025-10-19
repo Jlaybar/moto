@@ -8,6 +8,14 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Ensure SQLite path exists and set default DATABASE_URL if missing
+const dataDir = path.join(process.cwd(), 'prisma');
+const dbFile = path.join(dataDir, 'dev.db');
+try { fs.mkdirSync(dataDir, { recursive: true }); } catch {}
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'file:' + dbFile.replace(/\\/g, '/');
+}
+
 // SSE clients
 const CLIENTS = new Set();
 const app = express();
@@ -75,6 +83,16 @@ app.get('/users', async (req, res) => {
   }
 });
 
+// Count must be declared before parameterized routes or restrict :id
+app.get('/users/count', async (req, res) => {
+  try {
+    const count = await prisma.user.count();
+    res.json({ count });
+  } catch (e) {
+    res.status(500).json({ error: 'db_error', detail: String(e?.message || e) });
+  }
+});
+
 app.get('/users/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid id' });
@@ -96,6 +114,17 @@ app.post('/users', async (req, res) => {
     res.status(201).json({ id: user.id, email: user.email, createdAt: user.createdAt });
   } catch (e) {
     res.status(500).json({ error: 'db_error', detail: String(e?.message || e) });
+  }
+});
+
+// DB health and quick stats
+app.get('/db/health', async (req, res) => {
+  try {
+    // Lightweight connectivity check that works on SQLite
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true, url: process.env.DATABASE_URL || null });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'db_error', detail: String(e?.message || e) });
   }
 });
 

@@ -9,8 +9,16 @@ Content-Type: application/json
 
 {
 "email": "user{{$timestamp}}@example.com",
-"password": "secret"
+"password": "1234567"
 }
+
+### DB health
+
+GET http://localhost:3000/db/health
+
+### Usuarios - Conteo
+
+GET http://localhost:3000/users/count
 
 ### Stream SSE (puede no mostrarse bien en REST Client)
 ### Consejo: mejor abrir http://localhost:3000/ en el navegador para ver el stream.
