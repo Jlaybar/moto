@@ -5,9 +5,18 @@
   "description": "Backend básico de chat usando Node.js y Server-Sent Events (sin dependencias)",
   "type": "module",
   "scripts": {
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:dbpush": "prisma db push",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "check:db": "node scripts/check-prisma.js"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.17.1",
+    "express": "^5.1.0",
+    "prisma": "^6.17.1"
   }
 }
