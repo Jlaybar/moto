@@ -1,0 +1,29 @@
+### Estado del backend
+
+GET http://localhost:3000/healthz
+
+
+### Crear usuario
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+"email": "user{{$timestamp}}@example.com",
+"password": "secret"
+}
+
+### Stream SSE (puede no mostrarse bien en REST Client)
+### Consejo: mejor abrir http://localhost:3000/ en el navegador para ver el stream.
+
+GET http://localhost:3000/events
+Accept: text/event-stream
+
+
+### Usuarios - Obtener por id
+
+@userId = 1
+GET http://localhost:3000/users/{{userId}}
+
+### Usuarios - Borrar
+
+DELETE http://localhost:3000/users/{{userId}}
