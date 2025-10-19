@@ -83,6 +83,16 @@ app.get('/users', async (req, res) => {
   }
 });
 
+// Count must be declared before parameterized routes or restrict :id
+app.get('/users/count', async (req, res) => {
+  try {
+    const count = await prisma.user.count();
+    res.json({ count });
+  } catch (e) {
+    res.status(500).json({ error: 'db_error', detail: String(e?.message || e) });
+  }
+});
+
 app.get('/users/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid id' });
@@ -115,15 +125,6 @@ app.get('/db/health', async (req, res) => {
     res.json({ ok: true, url: process.env.DATABASE_URL || null });
   } catch (e) {
     res.status(500).json({ ok: false, error: 'db_error', detail: String(e?.message || e) });
-  }
-});
-
-app.get('/users/count', async (req, res) => {
-  try {
-    const count = await prisma.user.count();
-    res.json({ count });
-  } catch (e) {
-    res.status(500).json({ error: 'db_error', detail: String(e?.message || e) });
   }
 });
 
