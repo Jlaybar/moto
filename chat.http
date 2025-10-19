@@ -1,0 +1,24 @@
+### Estado del backend
+
+GET http://localhost:3000/healthz
+
+### Enviar mensaje
+
+POST http://localhost:3000/message
+Content-Type: application/json
+
+{
+  "user": "jaime",
+  "text": "Mensaje desde REST Client"
+}
+
+### Limpiar chat
+
+POST http://localhost:3000/clear
+
+### Stream SSE (puede no mostrarse bien en REST Client)
+### Consejo: mejor abrir http://localhost:3000/ en el navegador para ver el stream.
+
+GET http://localhost:3000/events
+Accept: text/event-stream
+
