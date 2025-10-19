@@ -14,3 +14,25 @@ POST http://localhost:3000/clear
 ### Verificar estado del servidor
 GET http://localhost:3000/healthz
 
+### Usuarios - Crear
+
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "secret"
+}
+
+### Usuarios - Listar
+
+GET http://localhost:3000/users
+
+### Usuarios - Obtener por id
+
+@userId = 1
+GET http://localhost:3000/users/{{userId}}
+
+### Usuarios - Borrar
+
+DELETE http://localhost:3000/users/{{userId}}
