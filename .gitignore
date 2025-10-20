@@ -6,3 +6,10 @@ coverage/
 *.log
 
 /generated/prisma
+prisma/dev.db
+prisma/*.db
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+.env
