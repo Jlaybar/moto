@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
+    "dev": "node server/index.js",
     "prisma:generate": "prisma generate",
     "prisma:dbpush": "prisma db push",
     "prisma:migrate": "prisma migrate dev --name init",
