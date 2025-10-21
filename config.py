@@ -1,7 +1,8 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Prioriza la clave en .env sobre variables ya existentes en el entorno
+load_dotenv(override=True)
 
 class Config:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
