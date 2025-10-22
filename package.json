@@ -10,14 +10,37 @@
     "prisma:generate": "prisma generate",
     "prisma:dbpush": "prisma db push",
     "prisma:migrate": "prisma migrate dev --name init",
-    "check:db": "node scripts/check-prisma.js"
+    "check:db": "node scripts/check-prisma.js",
+    "gmail:send": "node gmail_send.js",
+    "gmail:get-token": "node get-token.js",
+    "postinstall": "prisma generate || exit 0"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
+    "cookie-session": "^2.0.0",
+    "dotenv": "^16.4.5",
     "express": "^5.1.0",
+    "googleapis": "^133.0.0"
+  },
+  "devDependencies": {
     "prisma": "^6.17.1"
-  }
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jlaybar/chatboot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jlaybar/chatboot/issues"
+  },
+  "homepage": "https://github.com/Jlaybar/chatboot#readme"
 }
