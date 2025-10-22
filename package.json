@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "check:db": "node scripts/check-prisma.js",
     "gmail:send": "node gmail_send.js",
+    "gmail:get-token": "node get-token.js",
     "postinstall": "prisma generate || exit 0"
   },
   "engines": {
