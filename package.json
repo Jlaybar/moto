@@ -11,7 +11,7 @@
     "prisma:dbpush": "prisma db push",
     "prisma:migrate": "prisma migrate dev --name init",
     "check:db": "node scripts/check-prisma.js",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate || exit 0"
   },
   "engines": {
     "node": ">=18"

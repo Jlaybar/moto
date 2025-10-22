@@ -100,17 +100,17 @@ if (OAUTH_CALLBACK_PATH !== '/gmail/auth/callback') {
   app.get('/gmail/auth/callback', oauthCallbackHandler);
 }
 
-// 3) Enviar correo
+// 3) Enviar correo (solo OAuth2 Gmail API)
 app.post('/gmail/send', async (req, res) => {
   try {
-    if (!req.session.tokens) return res.status(401).send('Not authenticated');
-    const auth = getOAuth2Client(req.session.tokens);
-    const gmail = google.gmail({ version: 'v1', auth });
-
     const to = String(req.body?.to || '').trim();
     const subject = String(req.body?.subject || '').trim();
     const message = String(req.body?.message || '');
     if (!to || !subject) return res.status(400).json({ error: 'to/subject requeridos' });
+
+    if (!req.session.tokens) return res.status(401).send('Not authenticated');
+    const auth = getOAuth2Client(req.session.tokens);
+    const gmail = google.gmail({ version: 'v1', auth });
 
     const raw = [
       `To: ${to}`,
@@ -126,13 +126,8 @@ app.post('/gmail/send', async (req, res) => {
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=+$/, '');
-
-    const result = await gmail.users.messages.send({
-      userId: 'me',
-      requestBody: { raw: encoded },
-    });
-
-    res.json({ id: result.data.id, status: 'sent' });
+    const result = await gmail.users.messages.send({ userId: 'me', requestBody: { raw: encoded } });
+    return res.json({ id: result.data.id, status: 'sent' });
   } catch (e) {
     console.error(e);
     res.status(500).send('Send failed');
