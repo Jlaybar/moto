@@ -11,6 +11,7 @@
     "prisma:dbpush": "prisma db push",
     "prisma:migrate": "prisma migrate dev --name init",
     "check:db": "node scripts/check-prisma.js",
+    "gmail:send": "node gmail_send.js",
     "postinstall": "prisma generate || exit 0"
   },
   "engines": {
@@ -18,9 +19,9 @@
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
-    "express": "^5.1.0",
-    "dotenv": "^16.4.5",
     "cookie-session": "^2.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
     "googleapis": "^133.0.0"
   },
   "devDependencies": {
