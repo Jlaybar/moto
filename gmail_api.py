@@ -4,8 +4,10 @@ gmail_send.py - Envío de correos y gestión de mensajes usando Gmail API
 """
 
 import os
+from dotenv import load_dotenv
 import base64
 import json
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from google.auth.transport.requests import Request
@@ -18,10 +20,14 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
+# Cargar variables desde .env para CLI y servidor
+load_dotenv(override=True)
+
 # Si modifica estos SCOPES, elimine el archivo token.json.
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.send',
-    'https://www.googleapis.com/auth/gmail.readonly'
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.modify'
 ]
 
 def assert_env(name):
@@ -54,8 +60,7 @@ def load_credentials():
                     refresh_token=refresh_token,
                     token_uri='https://oauth2.googleapis.com/token',
                     client_id=client_id,
-                    client_secret=client_secret,
-                    scopes=SCOPES
+                    client_secret=client_secret
                 )
                 # Refrescar el token
                 creds.refresh(Request())
@@ -106,6 +111,145 @@ def get_message_text_parts(parts):
             # Mensajes multipart
             text_parts.extend(get_message_text_parts(part['parts']))
     return text_parts
+
+def search_messages(search_query, max_results=100):
+    """Busca mensajes basados en una consulta"""
+    try:
+        service = get_gmail_service()
+        if not service:
+            print("No se pudo obtener el servicio de Gmail")
+            return None
+
+        result = service.users().messages().list(
+            userId='me',
+            q=search_query,
+            maxResults=max_results
+        ).execute()
+
+        messages = result.get('messages', [])
+        messages_list = []
+
+        print(f"Buscando mensajes con query: '{search_query}'")
+        print(f"Encontrados {len(messages)} mensajes")
+
+        # Obtener detalles de cada mensaje
+        for msg in messages:
+            message_detail = service.users().messages().get(
+                userId='me',
+                id=msg['id'],
+                format='metadata',
+                metadataHeaders=['Subject', 'From', 'Date']
+            ).execute()
+
+            headers = {h['name']: h['value'] for h in message_detail.get('payload', {}).get('headers', [])}
+
+            messages_list.append({
+                'id': msg['id'],
+                'threadId': msg.get('threadId'),
+                'snippet': message_detail.get('snippet', ''),
+                'subject': headers.get('Subject', ''),
+                'from': headers.get('From', ''),
+                'date': headers.get('Date', ''),
+                'labelIds': message_detail.get('labelIds', [])
+            })
+
+        return messages_list
+
+    except HttpError as err:
+        print(f'Error buscando mensajes: {err}')
+        return []
+
+
+def delete_messages_by_keyword(keyword, search_in='both', max_results=500, dry_run=False):
+    """
+    Elimina mensajes que contengan una palabra clave en asunto o remitente
+
+    Args:
+        keyword (str): Palabra clave a buscar
+        search_in (str): Dónde buscar ('subject', 'from', 'both')
+        max_results (int): Máximo número de mensajes a procesar
+        dry_run (bool): Si es True, solo muestra qué se eliminaría sin hacer cambios
+    """
+    try:
+        service = get_gmail_service()
+        if not service:
+            print("No se pudo obtener el servicio de Gmail")
+            return None
+
+        # Construir query de búsqueda
+        search_queries = []
+        if search_in in ['subject', 'both']:
+            search_queries.append(f'subject:"{keyword}"')
+        if search_in in ['from', 'both']:
+            search_queries.append(f'from:"{keyword}"')
+
+        # Buscar mensajes para cada query
+        all_messages = []
+        seen_ids = set()
+        for query in search_queries:
+            messages = search_messages(query, max_results) or []
+            for msg in messages:
+                if msg['id'] not in seen_ids:
+                    seen_ids.add(msg['id'])
+                    all_messages.append(msg)
+
+        if not all_messages:
+            print("No se encontraron mensajes que coincidan con la búsqueda")
+            return None
+
+        # Mostrar mensajes encontrados
+        print(f"\nMENSAJES ENCONTRADOS ({len(all_messages)}):")
+        print("=" * 100)
+        for i, msg in enumerate(all_messages, 1):
+            source = []
+            if search_in in ['subject', 'both'] and keyword.lower() in msg['subject'].lower():
+                source.append('asunto')
+            if search_in in ['from', 'both'] and keyword.lower() in msg['from'].lower():
+                source.append('remitente')
+            print(f"{i}. ID: {msg['id']}")
+            print(f"   De: {msg['from']}")
+            print(f"   Asunto: {msg['subject']}")
+            print(f"   Fecha: {msg['date']}")
+            print(f"   Coincidencia en: {', '.join(source)}")
+            print(f"   Snippet: {msg['snippet'][:100]}...")
+            print("-" * 100)
+
+        if dry_run:
+            print(f"\nMODO SIMULACIÓN: Se eliminarían {len(all_messages)} mensajes")
+            print("   Ejecuta con dry_run=False para eliminar realmente")
+            return all_messages
+
+        # Confirmar eliminación
+        print(f"\n¿Estás seguro de que quieres eliminar {len(all_messages)} mensajes?")
+        confirm = input("   Escribe 'ELIMINAR' para confirmar: ")
+        if confirm != 'ELIMINAR':
+            print("Eliminación cancelada")
+            return None
+
+        # Eliminar mensajes
+        deleted_count = 0
+        error_count = 0
+        for i, msg in enumerate(all_messages, 1):
+            try:
+                service.users().messages().delete(userId='me', id=msg['id']).execute()
+                deleted_count += 1
+                print(f"Eliminado {i}/{len(all_messages)}: {msg['subject'][:50]}...")
+                time.sleep(0.1)
+            except HttpError as err:
+                error_count += 1
+                print(f"Error eliminando mensaje {msg['id']}: {err}")
+                continue
+
+        print("\nRESULTADO DE ELIMINACIÓN:")
+        print(f"   Eliminados: {deleted_count}")
+        print(f"   Errores: {error_count}")
+        print(f"   Total: {len(all_messages)}")
+
+        return { 'deleted': deleted_count, 'errors': error_count, 'total': len(all_messages) }
+
+    except Exception as err:
+        print(f'Error inesperado: {str(err)}')
+        return None
 
 # Endpoints de la API
 @app.route('/gmail/messages', methods=['GET'])
