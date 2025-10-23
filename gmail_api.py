@@ -251,6 +251,46 @@ def delete_messages_by_keyword(keyword, search_in='both', max_results=500, dry_r
         print(f'Error inesperado: {str(err)}')
         return None
 
+# Helper no interactivo para API (sin prompts)
+def delete_messages_by_keyword_api(keyword, search_in='both', max_results=500, dry_run=True):
+    try:
+        service = get_gmail_service()
+        if not service:
+            return None
+
+        search_queries = []
+        if search_in in ['subject', 'both']:
+            search_queries.append(f'subject:"{keyword}"')
+        if search_in in ['from', 'both']:
+            search_queries.append(f'from:"{keyword}"')
+
+        all_messages = []
+        seen_ids = set()
+        for query in search_queries:
+            messages = search_messages(query, max_results) or []
+            for msg in messages:
+                if msg['id'] not in seen_ids:
+                    seen_ids.add(msg['id'])
+                    all_messages.append(msg)
+
+        if dry_run:
+            return all_messages
+
+        deleted_count = 0
+        error_count = 0
+        for msg in all_messages:
+            try:
+                service.users().messages().delete(userId='me', id=msg['id']).execute()
+                deleted_count += 1
+                time.sleep(0.05)
+            except HttpError:
+                error_count += 1
+                continue
+
+        return { 'deleted': deleted_count, 'errors': error_count, 'total': len(all_messages) }
+    except Exception:
+        return None
+
 # Endpoints de la API
 @app.route('/gmail/messages', methods=['GET'])
 def list_messages():
@@ -310,6 +350,30 @@ def list_messages():
             'status': 'error',
             'message': f'Error inesperado: {str(err)}'
         }), 500
+
+@app.route('/gmail/delete/preview', methods=['GET'])
+def preview_delete_api():
+    try:
+        keyword = request.args.get('keyword')
+        if not keyword:
+            return jsonify({'status': 'error', 'message': 'Falta parámetro keyword'}), 400
+        search_in = request.args.get('search_in', 'both')
+        max_results = int(request.args.get('max_results', 500))
+        messages = delete_messages_by_keyword_api(keyword, search_in=search_in, max_results=max_results, dry_run=True) or []
+        return jsonify({'status': 'success', 'mode': 'preview', 'count': len(messages), 'messages': messages})
+    except Exception as err:
+        return jsonify({'status': 'error', 'message': f'Error inesperado: {str(err)}'}), 500
+
+@app.route('/gmail/messages/<message_id>', methods=['DELETE'])
+def delete_message_by_id(message_id):
+    try:
+        service = get_gmail_service()
+        service.users().messages().delete(userId='me', id=message_id).execute()
+        return jsonify({'status': 'success', 'deleted': message_id})
+    except HttpError as err:
+        return jsonify({'status': 'error', 'message': f'Error de Gmail API: {err}'}), 500
+    except Exception as err:
+        return jsonify({'status': 'error', 'message': f'Error inesperado: {str(err)}'}), 500
 
 @app.route('/gmail/messages/<message_id>', methods=['GET'])
 def get_message(message_id):
@@ -424,7 +488,7 @@ def delete_mail_api():
         dry_run = bool(data.get('dry_run', True))
 
         # Reutilizamos la lógica existente
-        result = delete_messages_by_keyword(keyword, search_in=search_in, max_results=max_results, dry_run=dry_run)
+        result = delete_messages_by_keyword_api(keyword, search_in=search_in, max_results=max_results, dry_run=dry_run)
 
         if dry_run:
             # result es la lista de mensajes que se eliminarían o None si no hay coincidencias
