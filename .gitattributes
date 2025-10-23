@@ -13,3 +13,5 @@
 *.md text eol=lf
 requirements.txt text eol=lf
 
+# Notebooks: evitar normalización EOL y advertencias en Windows
+*.ipynb -text
