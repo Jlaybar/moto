@@ -231,9 +231,9 @@ def send_mail_api():
         
         # Obtener datos del request
         data = request.get_json()
-        to = data.get('to', os.getenv('GMAIL_TO', 'jlaybar@gmail.com'))
+        to = data.get('to', os.getenv('GMAIL_TO', 'jlaybar@dominio.com'))
         subject = data.get('subject', 'Prueba desde Python API')
-        body = data.get('body', 'Hola1 👋 Este correo fue enviado desde Python usando la API de Gmail.')
+        body = data.get('body', 'Hola! 👋 Este correo fue enviado desde Python usando la API de Gmail.')
         
         # Crear y enviar mensaje
         message = create_message(to, subject, body)
@@ -271,9 +271,9 @@ def send_mail_cli():
         service = get_gmail_service()
         
         # Personaliza estos valores o pásalos vía env si prefieres
-        to = os.getenv('GMAIL_TO', 'jlaybar@gmail.com')
+        to = os.getenv('GMAIL_TO', 'jlaybar@dominio.com')
         subject = os.getenv('GMAIL_SUBJECT', 'Prueba desde Python CLI')
-        body = os.getenv('GMAIL_BODY', 'Hola2 👋 Este correo fue enviado desde Python usando la API de Gmail.')
+        body = os.getenv('GMAIL_BODY', 'Hola! 👋 Este correo fue enviado desde Python usando la API de Gmail.')
         
         # Crear y enviar mensaje
         message = create_message(to, subject, body)
