@@ -25,28 +25,7 @@ load_dotenv(override=True)
 
 # Scopes: lee de GMAIL_SCOPES o usa valores por defecto.
 # Si cambia los scopes, elimine el archivo token.json y regenere tokens.
-_scopes_env = os.getenv('GMAIL_SCOPES', '').strip()
-if _scopes_env:
-    parts = (
-        _scopes_env
-        .replace(';', ',')
-        .replace('\n', ' ')
-        .replace('\t', ' ')
-        .split(',')
-    )
-    _scopes_list = []
-    for p in parts:
-        for s in p.strip().split():
-            if s:
-                _scopes_list.append(s)
-    SCOPES = _scopes_list
-else:
-    SCOPES = [
-        'https://www.googleapis.com/auth/gmail.modify',
-        'https://www.googleapis.com/auth/gmail.readonly',
-        'https://www.googleapis.com/auth/gmail.send',
-    ]
-
+SCOPES = os.getenv('GMAIL_SCOPES', '').strip()
 
 def assert_env(name):
     """Verifica que una variable de entorno exista"""
