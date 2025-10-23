@@ -266,7 +266,7 @@ def delete_messages_by_keyword(keyword, search_in='both', max_results=500, dry_r
         return None
 
 # Helper no interactivo para API (sin prompts)
-def delete_messages_by_keyword_api(keyword, search_in='both', max_results=5, dry_run=True):
+def delete_messages_by_keyword_api(keyword, search_in='both', max_results=500, dry_run=True):
     try:
         service = get_gmail_service()
         if not service:
