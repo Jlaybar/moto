@@ -1,0 +1,15 @@
+* text=auto
+
+# Enforce LF on common text/code files
+*.js text eol=lf
+*.ts text eol=lf
+*.jsx text eol=lf
+*.tsx text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+requirements.txt text eol=lf
+
