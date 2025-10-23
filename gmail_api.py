@@ -23,12 +23,30 @@ app = Flask(__name__)
 # Cargar variables desde .env para CLI y servidor
 load_dotenv(override=True)
 
-# Si modifica estos SCOPES, elimine el archivo token.json.
-SCOPES = [
-    'https://www.googleapis.com/auth/gmail.send',
-    'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.modify'
-]
+# Scopes: lee de GMAIL_SCOPES o usa valores por defecto.
+# Si cambia los scopes, elimine el archivo token.json y regenere tokens.
+_scopes_env = os.getenv('GMAIL_SCOPES', '').strip()
+if _scopes_env:
+    parts = (
+        _scopes_env
+        .replace(';', ',')
+        .replace('\n', ' ')
+        .replace('\t', ' ')
+        .split(',')
+    )
+    _scopes_list = []
+    for p in parts:
+        for s in p.strip().split():
+            if s:
+                _scopes_list.append(s)
+    SCOPES = _scopes_list
+else:
+    SCOPES = [
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.send',
+    ]
+
 
 def assert_env(name):
     """Verifica que una variable de entorno exista"""
@@ -43,6 +61,15 @@ def load_credentials():
     # El archivo token.json almacena los tokens de acceso y actualización
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        # Si token.json no cubre los SCOPES requeridos y existe refresh token en entorno, forzar rama ENV
+        try:
+            required = set(SCOPES)
+            current = set(getattr(creds, 'scopes', []) or [])
+            env_refresh = os.getenv('GMAIL_REFRESH_TOKEN')
+            if required - current and env_refresh:
+                creds = None
+        except Exception:
+            pass
     
     # Si no hay credenciales válidas, permite que el usuario inicie sesión
     if not creds or not creds.valid:
@@ -60,7 +87,8 @@ def load_credentials():
                     refresh_token=refresh_token,
                     token_uri='https://oauth2.googleapis.com/token',
                     client_id=client_id,
-                    client_secret=client_secret
+                    client_secret=client_secret,
+                    scopes=SCOPES
                 )
                 # Refrescar el token
                 creds.refresh(Request())
@@ -74,6 +102,13 @@ def load_credentials():
             with open('token.json', 'w') as token:
                 token.write(creds.to_json())
     
+    # Log de depuración opcional
+    if os.getenv('GMAIL_DEBUG') == '1':
+        try:
+            print(f"[GMAIL] scopes activos: {(getattr(creds,'scopes',[]) or [])}")
+        except Exception:
+            pass
+
     return creds
 
 def get_gmail_service():
@@ -252,7 +287,7 @@ def delete_messages_by_keyword(keyword, search_in='both', max_results=500, dry_r
         return None
 
 # Helper no interactivo para API (sin prompts)
-def delete_messages_by_keyword_api(keyword, search_in='both', max_results=500, dry_run=True):
+def delete_messages_by_keyword_api(keyword, search_in='both', max_results=5, dry_run=True):
     try:
         service = get_gmail_service()
         if not service:
@@ -566,4 +601,5 @@ if __name__ == '__main__':
         print("   POST /gmail/delete            (eliminar por keyword; dry_run por defecto)")
         print("   GET  /gmail/delete/preview    (previsualizar mensajes a eliminar)")
         print("   DELETE /gmail/messages/:id    (eliminar por ID)")
+        print("SCOPES activos: " + ", ".join(SCOPES))
         app.run(debug=True, host='0.0.0.0', port=5000)
