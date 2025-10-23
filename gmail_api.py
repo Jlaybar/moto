@@ -23,12 +23,34 @@ app = Flask(__name__)
 # Cargar variables desde .env para CLI y servidor
 load_dotenv(override=True)
 
-# Si modifica estos SCOPES, elimine el archivo token.json.
-SCOPES = [
-    'https://www.googleapis.com/auth/gmail.send',
-    'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.modify'
-]
+# Scopes: lee de GMAIL_SCOPES o usa valores por defecto.
+# Si cambia los scopes, elimine el archivo token.json y regenere tokens.
+_scopes_env = os.getenv('GMAIL_SCOPES', '').strip()
+if _scopes_env:
+    # Acepta separados por coma o espacios
+    parts = (
+        _scopes_env
+        .replace(';', ',')
+        .replace('\n', ' ')
+        .replace('\t', ' ')
+        .split(',')
+    )
+    _scopes_list = []
+    for p in parts:
+        for s in p.strip().split():
+            if s:
+                _scopes_list.append(s)
+    SCOPES = _scopes_list or [
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.send',
+    ]
+else:
+    SCOPES = [
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.send',
+    ]
 
 def assert_env(name):
     """Verifica que una variable de entorno exista"""
