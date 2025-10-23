@@ -1,0 +1,40 @@
+### Gmail - OAuth inicio
+
+GET http://localhost:3000/gmail/auth/login
+
+
+### Gmail - OAuth callback
+# Usa estos placeholders si deseas probar manualmente
+@code = PASTE_CODE_AQUI
+@state = PASTE_STATE_AQUI
+
+GET http://localhost:3000/gmail/auth/callback?code={{code}}&state={{state}}
+
+
+### Gmail - Enviar correo
+POST http://localhost:3000/gmail/send
+Content-Type: application/json
+
+{
+  "to": "jlaybar@gmail.com",
+  "subject": "Prueba {{$datetime rfc1123}}",
+  "message": "Hola, este es un mensaje de prueba desde REST Client."
+}
+
+
+### Gmail - Listar últimos mensajes
+@limit = 10
+GET http://localhost:3000/gmail/messages?limit={{limit}}
+Accept: application/json
+
+
+### Gmail - Obtener cuerpo de un mensaje (texto)
+@messageId = REEMPLAZA_CON_ID
+GET http://localhost:3000/gmail/messages/{{messageId}}
+Accept: text/plain
+
+
+### Gmail - Estado de autenticación
+GET http://localhost:3000/gmail/me
+Accept: application/json
+
