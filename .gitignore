@@ -17,6 +17,8 @@ ENV/
 ## Environment files
 .env
 .env.*
+token.json
+credentials.json
 
 ## Jupyter
 .ipynb_checkpoints/
