@@ -65,6 +65,15 @@ def load_credentials():
     # El archivo token.json almacena los tokens de acceso y actualización
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        # Si token.json no cubre los SCOPES requeridos y existe refresh token en entorno, forzar rama ENV
+        try:
+            required = set(SCOPES)
+            current = set(getattr(creds, 'scopes', []) or [])
+            env_refresh = os.getenv('GMAIL_REFRESH_TOKEN')
+            if required - current and env_refresh:
+                creds = None
+        except Exception:
+            pass
     
     # Si no hay credenciales válidas, permite que el usuario inicie sesión
     if not creds or not creds.valid:
@@ -97,6 +106,13 @@ def load_credentials():
             with open('token.json', 'w') as token:
                 token.write(creds.to_json())
     
+    # Log de depuración opcional
+    if os.getenv('GMAIL_DEBUG') == '1':
+        try:
+            print(f"[GMAIL] scopes activos: {(getattr(creds,'scopes',[]) or [])}")
+        except Exception:
+            pass
+
     return creds
 
 def get_gmail_service():
