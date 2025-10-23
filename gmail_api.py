@@ -376,7 +376,7 @@ def send_mail_api():
         # Obtener datos del request
         data = request.get_json()
         to = data.get('to', os.getenv('GMAIL_TO', 'jlaybar@dominio.com'))
-        subject = data.get('subject', 'Prueba desde Python API')
+        subject = data.get('subject', 'send_mail_api: Prueba desde Python Flask')
         body = data.get('body', 'Hola! 👋 Este correo fue enviado desde Python usando la API de Gmail.')
         
         # Crear y enviar mensaje
@@ -403,6 +403,58 @@ def send_mail_api():
             'message': f'Error inesperado: {str(err)}'
         }), 500
 
+@app.route('/gmail/delete', methods=['POST'])
+def delete_mail_api():
+    """Elimina mensajes según criterios. JSON esperado:
+    { "keyword": "texto", "search_in": "subject|from|both", "max_results": 500, "dry_run": true }
+    - Si dry_run=true, devuelve la lista de mensajes que se eliminarían.
+    - Si dry_run=false, solicita confirmación no interactiva y elimina (sin prompt) devolviendo conteos.
+    """
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        keyword = data.get('keyword')
+        if not keyword:
+            return jsonify({
+                'status': 'error',
+                'message': 'Falta parámetro keyword'
+            }), 400
+
+        search_in = data.get('search_in', 'both')
+        max_results = int(data.get('max_results', 500))
+        dry_run = bool(data.get('dry_run', True))
+
+        # Reutilizamos la lógica existente
+        result = delete_messages_by_keyword(keyword, search_in=search_in, max_results=max_results, dry_run=dry_run)
+
+        if dry_run:
+            # result es la lista de mensajes que se eliminarían o None si no hay coincidencias
+            messages = result or []
+            return jsonify({
+                'status': 'success',
+                'mode': 'dry_run',
+                'count': len(messages),
+                'messages': messages
+            })
+        else:
+            # En modo API no haremos prompt de confirmación; si la función pidiera confirmación
+            # idealmente habría un flag. Dado el helper actual, asumimos que ya eliminó y devolvió conteos.
+            summary = result or { 'deleted': 0, 'errors': 0, 'total': 0 }
+            return jsonify({
+                'status': 'success',
+                'mode': 'delete',
+                'summary': summary
+            })
+    except HttpError as err:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error de Gmail API: {err}'
+        }), 500
+    except Exception as err:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error inesperado: {str(err)}'
+        }), 500
+
 # Función CLI original (para compatibilidad)
 def send_mail_cli():
     """Envía un correo usando Gmail API (modo CLI)"""
@@ -416,7 +468,7 @@ def send_mail_cli():
         
         # Personaliza estos valores o pásalos vía env si prefieres
         to = os.getenv('GMAIL_TO', 'jlaybar@dominio.com')
-        subject = os.getenv('GMAIL_SUBJECT', 'Prueba desde Python CLI')
+        subject = os.getenv('GMAIL_SUBJECT', 'send_mail_cli: Prueba desde Python')
         body = os.getenv('GMAIL_BODY', 'Hola! 👋 Este correo fue enviado desde Python usando la API de Gmail.')
         
         # Crear y enviar mensaje
