@@ -563,4 +563,7 @@ if __name__ == '__main__':
         print("   GET  /gmail/messages          (listar últimos mensajes)")
         print("   GET  /gmail/messages/:id      (obtener cuerpo del mensaje)")
         print("   POST /gmail/send              (enviar correo)")
+        print("   POST /gmail/delete            (eliminar por keyword; dry_run por defecto)")
+        print("   GET  /gmail/delete/preview    (previsualizar mensajes a eliminar)")
+        print("   DELETE /gmail/messages/:id    (eliminar por ID)")
         app.run(debug=True, host='0.0.0.0', port=5000)
