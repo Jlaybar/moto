@@ -589,4 +589,5 @@ if __name__ == '__main__':
         print("   POST /gmail/delete            (eliminar por keyword; dry_run por defecto)")
         print("   GET  /gmail/delete/preview    (previsualizar mensajes a eliminar)")
         print("   DELETE /gmail/messages/:id    (eliminar por ID)")
+        print("SCOPES activos: " + ", ".join(SCOPES))
         app.run(debug=True, host='0.0.0.0', port=5000)
