@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
+import pandas as pd
 from typing import Any, Dict, List, Tuple, Optional
 
 from flask import Flask, request, jsonify
@@ -237,6 +238,25 @@ def db_delete_pk(tabla: str, pk: str, valor: Any, data_db: str = SQLITE_PATH) ->
         conn.close()
     return res
 
+def json_to_dataframe(json_data):
+    """
+    Convierte un JSON con formato específico a DataFrame de pandas
+    
+    Args:
+        json_data: Puede ser un diccionario Python o string JSON con el formato:
+                  {'columns': [lista_columnas], 'rows': [lista_tuplas], 'rowcount': n}
+    
+    Returns:
+        pandas.DataFrame: DataFrame con los datos del JSON
+    """
+    # Si el input es un string, convertirlo a diccionario
+    if isinstance(json_data, str):
+        json_data = json.loads(json_data)
+    
+    # Crear DataFrame directamente desde las columnas y filas
+    df = pd.DataFrame(json_data['rows'], columns=json_data['columns'])
+    
+    return df
 # ------------------------------
 # Flask Routes
 # ------------------------------
