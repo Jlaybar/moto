@@ -1,0 +1,74 @@
+-----------------------------------------------------------
+--
+--  DB PYTHON
+--
+-----------------------------------------------------------
+
+
+pip install -r requirements.txt
+
+python db_sqlite3_api.py
+
+
+curl -sS "http://localhost:5000/db/tables?db=dev.db"
+
+curl -sS "http://localhost:5000/db/tables"
+
+curl -sS "http://localhost:5000/db/read?tabla=usuarios&campos=*&condicion_sql=nombre%20like%20%27Maria%25%27"
+
+curl -sS "http://localhost:5000/db/read?tabla=usuarios&campos=*&condicion_sql="
+
+curl -X POST http://localhost:5000/db/delete \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tabla": "usuarios",
+    "condicion_sql": "edad < 18"
+  }'
+
+curl -X POST http://localhost:5000/db/delete_pk \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tabla": "usuarios",
+    "pk": "id",
+    "valor": 5
+  }'
+
+curl -sS -X POST http://localhost:5000/db/insert \
+-H "Content-Type: application/json" \
+-d '{
+"tabla": "usuarios",
+"valores": {
+"nombre": "Teresa",
+"email": "mama@example.com",
+"edad": 45
+},
+"update_on_conflict": true,
+"conflict_cols": ["email"]
+}'
+
+
+
+-----------------------------------------------------------
+--
+--  GMAIL
+--
+-----------------------------------------------------------
+
+curl -X POST http://localhost:5000/gmail/send \
+  -H "Content-Type: application/json" \
+  -d '{"to": "jlaybar@gmail.com", "subject": "Asunto1", "body": "Contenido del email"}'
+
+curl -X GET "http://localhost:5000/gmail/messages?maxResults=2"
+curl -X GET "http://localhost:5000/gmail/messages?labelIds=SENT"
+curl -X GET "http://localhost:5000/gmail/messages?labelIds=INBOX"
+curl -X GET "http://localhost:5000/gmail/messages?labelIds=UNREAD"
+curl -X GET "http://localhost:5000/gmail/messages?labelIds=SPAM"
+
+curl -sS "http://localhost:5000/gmail/delete/preview?keyword=Revolut&search_in=subject&max_results=5"
+
+curl -sS -X POST http://localhost:5000/gmail/delete \
+  -H "Content-Type: application/json" \
+  -d '{"keyword":"@linkedin.com","search_in":"from","max_results":100,"dry_run":false}'
+
+
+curl -sS -X DELETE "http://localhost:5000/gmail/messages/19a0fdae420b4579"
