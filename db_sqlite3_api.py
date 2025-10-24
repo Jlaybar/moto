@@ -74,6 +74,52 @@ def rows_to_dicts(cursor, rows: List[Tuple]) -> List[Dict[str, Any]]:
 # Higher-level Helpers (sqlite3 direct)
 # ------------------------------
 
+def db_read(
+    tabla: str,
+    campos: Optional[List[str]] = None,
+    condicion_sql: Optional[str] = None,
+    data_db: str = SQLITE_PATH,
+) -> Dict[str, Any]:
+    """
+    SELECT <campos> FROM <tabla> [WHERE <condicion_sql>]
+    - tabla: nombre de la tabla
+    - campos: lista de columnas o None/'*' para todas
+    - condicion_sql: cláusula WHERE cruda (sin "WHERE")
+    """
+    t = validate_identifier(tabla, "table name")
+    # Build column list
+    if not campos or (isinstance(campos, list) and len(campos) == 0):
+        col_expr = "*"
+    else:
+        # Allow caller to pass '*' as a single-item list or string
+        if isinstance(campos, list):
+            if len(campos) == 1 and campos[0] == "*":
+                col_expr = "*"
+            else:
+                safe_cols = [validate_identifier(c, "column name") for c in campos]
+                col_expr = ", ".join(safe_cols)
+        else:
+            # Unexpected type
+            raise ValueError("'campos' debe ser una lista de nombres de columna o estar vacío para '*'.")
+
+    sql = f"SELECT {col_expr} FROM {t}"
+    if condicion_sql:
+        sql += f" WHERE {condicion_sql}"
+
+    conn = get_db_connection(data_db)
+    try:
+        cur = conn.cursor()
+        cur.execute(sql)
+        rows = cur.fetchall()
+        columns = [col[0] for col in cur.description] if cur.description else []
+        return {
+            "columns": columns,
+            "rows": rows,
+            "rowcount": len(rows),
+        }
+    finally:
+        conn.close()
+
 def db_tables(data_db: str = SQLITE_PATH) -> List[str]:
     """
     Devuelve el listado de tablas de la base de datos (excluyendo tablas internas de SQLite).
@@ -270,6 +316,44 @@ def route_db_delete_pk():
     try:
         result = db_delete_pk(tabla, pk, valor, data_db=data_db)
         return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Lectura de registros
+@app.route("/db/read", methods=["GET"])
+def route_db_read():
+    """
+    GET /db/read?tabla=<nombre>&campos=col1,col2&condicion_sql=<condicion>&db=<optional_db_path>
+    - campos: lista separada por comas; si se omite o es '*', devuelve todas
+    - condicion_sql: se concatena como WHERE <condicion_sql>
+    """
+    tabla = request.args.get("tabla")
+    campos_param = request.args.get("campos")
+    condicion_sql = request.args.get("condicion_sql")
+    data_db = request.args.get("db", SQLITE_PATH)
+
+    if not tabla:
+        return jsonify({"error": "Falta el parámetro requerido: 'tabla'."}), 400
+
+    # Parse campos
+    if not campos_param or campos_param.strip() == "*":
+        campos = []  # interpret as '*'
+    else:
+        campos = [c.strip() for c in campos_param.split(",") if c.strip()]
+
+    try:
+        result = db_read(tabla, campos=campos, condicion_sql=condicion_sql, data_db=data_db)
+        # Convert rows to dicts for readability
+        rows = result["rows"]
+        columns = result["columns"]
+        dict_rows = [dict(zip(columns, r)) for r in rows] if columns else rows
+        return jsonify({
+            "columns": columns,
+            "rows": dict_rows,
+            "rowcount": result["rowcount"],
+        })
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
