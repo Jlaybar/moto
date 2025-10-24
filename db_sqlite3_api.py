@@ -273,6 +273,41 @@ def route_db_delete_pk():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Listado de tablas
+@app.route("/db/tables", methods=["GET"])
+def route_db_tables():
+    """
+    GET /db/tables?db=<optional_db_path>
+    Devuelve la lista de tablas de la base de datos.
+    """
+    data_db = request.args.get("db", SQLITE_PATH)
+    try:
+        tables = db_tablas(data_db=data_db)
+        return jsonify({"tables": tables, "count": len(tables)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Esquema de una tabla
+@app.route("/db/table_schema", methods=["GET"])
+def route_db_table_schema():
+    """
+    GET /db/table_schema?tabla=<nombre>&db=<optional_db_path>
+    Devuelve el esquema (columnas) de la tabla indicada.
+    """
+    tabla = request.args.get("tabla")
+    data_db = request.args.get("db", SQLITE_PATH)
+    if not tabla:
+        return jsonify({"error": "Falta el parámetro requerido: 'tabla'."}), 400
+    try:
+        # validate_identifier también se aplicará en db_table_schema
+        validate_identifier(tabla, "table name")
+        schema = db_table_schema(tabla, data_db=data_db)
+        return jsonify({"tabla": tabla, "schema": schema, "count": len(schema)})
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # Health check
 @app.route("/health", methods=["GET"])
 def health():
