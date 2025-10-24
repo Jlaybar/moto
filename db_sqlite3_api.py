@@ -37,8 +37,18 @@ def get_db_connection(db_path: Optional[str] = None):
 
     if backend == "sqlite":
         path = db_path or SQLITE_PATH
-        # ensure parent exists if relative
-        return sqlite3.connect(path)
+        # Configure connection to reduce 'database is locked' errors under concurrency
+        # - timeout: wait for locks
+        # - PRAGMAs: WAL journal for readers+writes, busy_timeout for extra safety, FK enforcement
+        conn = sqlite3.connect(path, timeout=float(os.getenv("DB_TIMEOUT", "10")))
+        try:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA busy_timeout=5000;")
+            conn.execute("PRAGMA foreign_keys=ON;")
+        except Exception:
+            # Ignore PRAGMA failures; keep connection usable
+            pass
+        return conn
     else:
         raise NotImplementedError(f"DB_BACKEND '{backend}' not implemented yet.")
 
@@ -184,7 +194,13 @@ def db_update(tabla: str, campo: str, valor: Any, condicion_sql: str, data_db: s
         conn.close()
     return res
 
-def db_insert(tabla: str, json_valores: Dict[str, Any], data_db: str = SQLITE_PATH) -> Dict[str, Any]:
+def db_insert(
+    tabla: str,
+    json_valores: Dict[str, Any],
+    data_db: str = SQLITE_PATH,
+    update_on_conflict: bool = False,
+    conflict_cols: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     """
     INSERT INTO <tabla> (<cols...>) VALUES (<placeholders...>)
     """
@@ -195,16 +211,42 @@ def db_insert(tabla: str, json_valores: Dict[str, Any], data_db: str = SQLITE_PA
     vals = list(json_valores.values())
     placeholders = ", ".join(["?"] * len(cols))
     col_list = ", ".join(cols)
-    sql = f"INSERT INTO {t} ({col_list}) VALUES ({placeholders})"
+    base_sql = f"INSERT INTO {t} ({col_list}) VALUES ({placeholders})"
+
+    # Optional UPSERT clause
+    sql = base_sql
+    if update_on_conflict:
+        if not conflict_cols:
+            raise ValueError("Debe proporcionar 'conflict_cols' cuando 'update_on_conflict' es True.")
+        conflict_cols_safe = [validate_identifier(c, "conflict column") for c in conflict_cols]
+        # Actualizar todas las columnas proporcionadas excepto las de conflicto
+        update_cols = [c for c in cols if c not in conflict_cols_safe]
+        if not update_cols:
+            raise ValueError("No hay columnas para actualizar en el UPSERT (todas están en conflict_cols).")
+        set_expr = ", ".join([f"{c} = excluded.{c}" for c in update_cols])
+        sql = base_sql + f" ON CONFLICT ({', '.join(conflict_cols_safe)}) DO UPDATE SET {set_expr}"
     conn = get_db_connection(data_db)
     try:
         cur = conn.cursor()
         cur.execute(sql, vals)
         conn.commit()
-        res = {"rowcount": cur.rowcount, "lastrowid": getattr(cur, "lastrowid", None)}
+        return {"rowcount": cur.rowcount, "lastrowid": getattr(cur, "lastrowid", None)}
+    except sqlite3.IntegrityError as ie:
+        # Rollback to release write lock and re-raise as ValueError with friendly message
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise ValueError(f"Violación de integridad (UNIQUE/FOREIGN KEY): {ie}")
+    except Exception:
+        # Ensure rollback on any other failure to avoid lingering locks
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
     finally:
         conn.close()
-    return res
 
 def db_delete(tabla: str, condicion_sql: str, data_db: str = SQLITE_PATH) -> Dict[str, Any]:
     """
@@ -288,16 +330,40 @@ def route_db_insert():
     POST /db/insert
     JSON: {"tabla": "...", "valores": {"col1": v1, "col2": v2, ...}, "db": "<optional_db_path>"}
     """
-    payload = request.get_json(silent=True) or {}
+    # Robust JSON parsing: try Flask JSON, then raw body
+    payload = request.get_json(silent=True)
+    if payload is None:
+        try:
+            raw = request.get_data(cache=False, as_text=True) or "{}"
+            payload = json.loads(raw)
+        except Exception:
+            payload = {}
+    # Support legacy key name
+    if isinstance(payload, dict) and "valores" not in payload and "json_valores" in payload:
+        payload["valores"] = payload.pop("json_valores")
+
     try:
         tabla = payload["tabla"]
         valores = payload["valores"]
         data_db = payload.get("db", SQLITE_PATH)
+        update_on_conflict = bool(payload.get("update_on_conflict", False))
+        conflict_cols = payload.get("conflict_cols")
+        if conflict_cols is not None and not isinstance(conflict_cols, list):
+            return jsonify({"error": "'conflict_cols' debe ser una lista de nombres de columnas."}), 400
     except KeyError as ke:
         return jsonify({"error": f"Falta el campo requerido: {ke}"}), 400
     try:
-        result = db_insert(tabla, valores, data_db=data_db)
+        result = db_insert(
+            tabla,
+            valores,
+            data_db=data_db,
+            update_on_conflict=update_on_conflict,
+            conflict_cols=conflict_cols,
+        )
         return jsonify(result)
+    except ValueError as ve:
+        # Likely integrity error (e.g., UNIQUE constraint)
+        return jsonify({"error": str(ve)}), 409
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -387,7 +453,7 @@ def route_db_tables():
     """
     data_db = request.args.get("db", SQLITE_PATH)
     try:
-        tables = db_tablas(data_db=data_db)
+        tables = db_tables(data_db=data_db)
         return jsonify({"tables": tables, "count": len(tables)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
