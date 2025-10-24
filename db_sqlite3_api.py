@@ -330,7 +330,18 @@ def route_db_insert():
     POST /db/insert
     JSON: {"tabla": "...", "valores": {"col1": v1, "col2": v2, ...}, "db": "<optional_db_path>"}
     """
-    payload = request.get_json(silent=True) or {}
+    # Robust JSON parsing: try Flask JSON, then raw body
+    payload = request.get_json(silent=True)
+    if payload is None:
+        try:
+            raw = request.get_data(cache=False, as_text=True) or "{}"
+            payload = json.loads(raw)
+        except Exception:
+            payload = {}
+    # Support legacy key name
+    if isinstance(payload, dict) and "valores" not in payload and "json_valores" in payload:
+        payload["valores"] = payload.pop("json_valores")
+
     try:
         tabla = payload["tabla"]
         valores = payload["valores"]
@@ -442,7 +453,7 @@ def route_db_tables():
     """
     data_db = request.args.get("db", SQLITE_PATH)
     try:
-        tables = db_tablas(data_db=data_db)
+        tables = db_tables(data_db=data_db)
         return jsonify({"tables": tables, "count": len(tables)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
