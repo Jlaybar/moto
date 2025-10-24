@@ -150,62 +150,6 @@ def db_delete_pk(tabla: str, pk: str, valor: Any, data_db: str = SQLITE_PATH) ->
 # ------------------------------
 # Flask Routes
 # ------------------------------
-
-@app.route("/db/read", methods=["GET"])
-def route_db_read():
-    """
-    GET /db/read?q=<SQL>&db=<optional_db_path>
-    Example: /db/read?q=SELECT%20*%20FROM%20users
-    """
-    text_sql = request.args.get("q")
-    data_db = request.args.get("db", SQLITE_PATH)
-    if not text_sql:
-        return jsonify({"error": "Missing 'q' query parameter with SQL statement."}), 400
-    try:
-        conn = get_db_connection(data_db)
-        try:
-            cur = conn.cursor()
-            cur.execute(text_sql)
-            rows = cur.fetchall()
-            columns = [col[0] for col in cur.description] if cur.description else []
-            dict_rows = [dict(zip(columns, r)) for r in rows] if columns else rows
-            return jsonify({
-                "columns": columns,
-                "rows": dict_rows,
-                "rowcount": len(rows)
-            })
-        finally:
-            conn.close()
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/db/exe", methods=["POST"])
-def route_db_exe():
-    """
-    POST /db/exe
-    JSON: {"sql": "<SQL>", "db": "<optional_db_path>"}
-    """
-    payload = request.get_json(silent=True) or {}
-    text_sql = payload.get("sql")
-    data_db = payload.get("db", SQLITE_PATH)
-    if not text_sql:
-        return jsonify({"error": "JSON body must include 'sql'."}), 400
-    try:
-        conn = get_db_connection(data_db)
-        try:
-            cur = conn.cursor()
-            cur.execute(text_sql)
-            conn.commit()
-            result = {
-                "rowcount": cur.rowcount,
-                "lastrowid": getattr(cur, "lastrowid", None)
-            }
-            return jsonify(result)
-        finally:
-            conn.close()
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 @app.route("/db/update", methods=["POST"])
 def route_db_update():
     """
