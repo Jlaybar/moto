@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import os
 import re
-import json
 import sqlite3
 from typing import Any, Dict, List, Tuple, Optional
 
@@ -21,7 +20,7 @@ app = Flask(__name__)
 
 # Environment variables (defaults for SQLite)
 DB_BACKEND = os.getenv("DB_BACKEND", "sqlite").lower()
-SQLITE_PATH = os.getenv("SQLITE_PATH", "dev.db")
+SQLITE_PATH = os.getenv("DB_FILE_PATH", "dev.db")
 
 def get_db_connection(db_path: Optional[str] = None):
     """
@@ -68,59 +67,21 @@ def rows_to_dicts(cursor, rows: List[Tuple]) -> List[Dict[str, Any]]:
     return result
 
 # ------------------------------
-# Core DB Call Utilities
+# Core DB Call Utilities (SQLite direct)
 # ------------------------------
 
-def db_read(text_sql: str, data_db: str = SQLITE_PATH) -> Dict[str, Any]:
-    """
-    Execute a SELECT (or any read) SQL and return columns + rows.
-    """
-    conn = get_db_connection(data_db)
-    conn.row_factory = None  # use default tuples
-    try:
-        cur = conn.cursor()
-        cur.execute(text_sql)
-        rows = cur.fetchall()
-        columns = [col[0] for col in cur.description] if cur.description else []
-        return {
-            "columns": columns,
-            "rows": rows,
-            "rowcount": len(rows)
-        }
-    finally:
-        conn.close()
-
-def db_exe(text_sql: str, data_db: str = SQLITE_PATH) -> Dict[str, Any]:
-    """
-    Execute a write statement (INSERT/UPDATE/DELETE/DDL). Returns rowcount and lastrowid.
-    """
-    conn = get_db_connection(data_db)
-    try:
-        cur = conn.cursor()
-        cur.execute(text_sql)
-        conn.commit()
-        return {
-            "rowcount": cur.rowcount,
-            "lastrowid": getattr(cur, "lastrowid", None)
-        }
-    finally:
-        conn.close()
-
 # ------------------------------
-# Higher-level Helpers (must use db_read/db_exe)
+# Higher-level Helpers (sqlite3 direct)
 # ------------------------------
 
 def db_update(tabla: str, campo: str, valor: Any, condicion_sql: str, data_db: str = SQLITE_PATH) -> Dict[str, Any]:
     """
     UPDATE <tabla> SET <campo> = ? WHERE <condicion_sql>
-    Uses db_exe under the hood.
     """
     t = validate_identifier(tabla, "table name")
     c = validate_identifier(campo, "column name")
     # NOTE: condicion_sql is treated as a raw SQL clause.
     sql = f"UPDATE {t} SET {c} = ? WHERE {condicion_sql}"
-    # We need a variant of db_exe that supports parameters. For the "obligatory use" rule,
-    # we call a param-capable internal executor and keep db_exe in the chain by formatting safely.
     conn = get_db_connection(data_db)
     try:
         cur = conn.cursor()
@@ -134,7 +95,6 @@ def db_update(tabla: str, campo: str, valor: Any, condicion_sql: str, data_db: s
 def db_insert(tabla: str, json_valores: Dict[str, Any], data_db: str = SQLITE_PATH) -> Dict[str, Any]:
     """
     INSERT INTO <tabla> (<cols...>) VALUES (<placeholders...>)
-    Uses db_exe under the hood.
     """
     t = validate_identifier(tabla, "table name")
     if not isinstance(json_valores, dict) or not json_valores:
@@ -157,17 +117,22 @@ def db_insert(tabla: str, json_valores: Dict[str, Any], data_db: str = SQLITE_PA
 def db_delete(tabla: str, condicion_sql: str, data_db: str = SQLITE_PATH) -> Dict[str, Any]:
     """
     DELETE FROM <tabla> WHERE <condicion_sql>
-    Uses db_exe under the hood.
     """
     t = validate_identifier(tabla, "table name")
     sql = f"DELETE FROM {t} WHERE {condicion_sql}"
-    # Use db_exe for execution (no parameters here)
-    return db_exe(sql, data_db=data_db)
+    conn = get_db_connection(data_db)
+    try:
+        cur = conn.cursor()
+        cur.execute(sql)
+        conn.commit()
+        res = {"rowcount": cur.rowcount}
+    finally:
+        conn.close()
+    return res
 
 def db_delete_pk(tabla: str, pk: str, valor: Any, data_db: str = SQLITE_PATH) -> Dict[str, Any]:
     """
     DELETE FROM <tabla> WHERE <pk> = ?
-    Uses db_exe under the hood.
     """
     t = validate_identifier(tabla, "table name")
     p = validate_identifier(pk, "primary key column")
@@ -197,16 +162,20 @@ def route_db_read():
     if not text_sql:
         return jsonify({"error": "Missing 'q' query parameter with SQL statement."}), 400
     try:
-        result = db_read(text_sql, data_db=data_db)
-        # convert rows to list of dicts for readability
-        rows = result["rows"]
-        columns = result["columns"]
-        dict_rows = [dict(zip(columns, r)) for r in rows] if columns else rows
-        return jsonify({
-            "columns": columns,
-            "rows": dict_rows,
-            "rowcount": result["rowcount"]
-        })
+        conn = get_db_connection(data_db)
+        try:
+            cur = conn.cursor()
+            cur.execute(text_sql)
+            rows = cur.fetchall()
+            columns = [col[0] for col in cur.description] if cur.description else []
+            dict_rows = [dict(zip(columns, r)) for r in rows] if columns else rows
+            return jsonify({
+                "columns": columns,
+                "rows": dict_rows,
+                "rowcount": len(rows)
+            })
+        finally:
+            conn.close()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -222,8 +191,18 @@ def route_db_exe():
     if not text_sql:
         return jsonify({"error": "JSON body must include 'sql'."}), 400
     try:
-        result = db_exe(text_sql, data_db=data_db)
-        return jsonify(result)
+        conn = get_db_connection(data_db)
+        try:
+            cur = conn.cursor()
+            cur.execute(text_sql)
+            conn.commit()
+            result = {
+                "rowcount": cur.rowcount,
+                "lastrowid": getattr(cur, "lastrowid", None)
+            }
+            return jsonify(result)
+        finally:
+            conn.close()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
