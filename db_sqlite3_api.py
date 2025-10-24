@@ -74,6 +74,50 @@ def rows_to_dicts(cursor, rows: List[Tuple]) -> List[Dict[str, Any]]:
 # Higher-level Helpers (sqlite3 direct)
 # ------------------------------
 
+def db_tables(data_db: str = SQLITE_PATH) -> List[str]:
+    """
+    Devuelve el listado de tablas de la base de datos (excluyendo tablas internas de SQLite).
+    """
+    conn = get_db_connection(data_db)
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+            ORDER BY name
+        """)
+        rows = cur.fetchall()
+        return [r[0] for r in rows]
+    finally:
+        conn.close()
+
+def db_table_schema(tabla: str, data_db: str = SQLITE_PATH) -> List[Dict[str, Any]]:
+    """
+    Devuelve la lista de campos (columnas) de una tabla.
+    Retorna una lista de diccionarios con: cid, name, type, notnull, dflt_value, pk.
+    """
+    t = validate_identifier(tabla, "table name")
+    conn = get_db_connection(data_db)
+    try:
+        cur = conn.cursor()
+        cur.execute(f"PRAGMA table_info({t})")
+        rows = cur.fetchall()
+        # PRAGMA table_info columns: cid, name, type, notnull, dflt_value, pk
+        return [
+            {
+                "cid": r[0],
+                "name": r[1],
+                "type": r[2],
+                "notnull": bool(r[3]),
+                "dflt_value": r[4],
+                "pk": bool(r[5]),
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
 def db_update(tabla: str, campo: str, valor: Any, condicion_sql: str, data_db: str = SQLITE_PATH) -> Dict[str, Any]:
     """
     UPDATE <tabla> SET <campo> = ? WHERE <condicion_sql>
