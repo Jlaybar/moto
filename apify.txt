@@ -1,0 +1,115 @@
+{
+    "browserLog": false,
+    "closeCookieModals": false,
+    "debugLog": false,
+    "downloadCss": false,
+    "downloadImages": false,
+    "downloadMedia": true,
+    "headless": true,
+    "ignoreCorsAndCsp": false,
+    "ignoreSslErrors": false,
+    "injectJQuery": false,
+    "keepUrlFragments": false,
+    "maxConcurrency": 1,
+    "maxRequestRetries": 1,
+    "maxRequestsPerCrawl": 1,
+    "pageFunction": "async function pageFunction(context) {\n    const { page, request, log } = context;\n    \n    log.info(`Procesando: ${request.url}`);\n    \n    // Esperar a que cargue la página\n    await page.waitForSelector('body', { timeout: 10000 });\n    \n    // Extraer el código fuente HTML completo\n    const htmlContent = await page.content();\n    \n    // Devolver el contenido HTML tal cual\n    return {\n        url: request.url,\n        html: htmlContent,\n        extractedAt: new Date().toISOString()\n    };\n}",
+    "proxyConfiguration": {
+        "useApifyProxy": true,
+        "apifyProxyGroups": [
+            "RESIDENTIAL"
+        ]
+    },
+    "respectRobotsTxtFile": false,
+    "startUrls": [
+        {
+            "url": "https://motos.coches.net/segunda-mano/?fi=SortDate&or=-1&hasPhoto=&onlyPeninsula=false&Section1Id=3000&MakeIds%5B0%5D=7&Models%5B0%5D=R%20nineT&pg=1"
+        }
+    ],
+    "useChrome": false,
+    "useRequestQueue": false,
+    "verboseLog": true
+}
+--------------------------------------------------------------------------
+--
+--  https://console.apify.com/actors/YJCnS9qogi9XxDgLB/input
+--
+--------------------------------------------------------------------------
+{
+    "browserLog": false,
+    "closeCookieModals": false,
+    "debugLog": false,
+    "downloadCss": false,
+    "downloadImages": false,
+    "downloadMedia": true,
+    "headless": true,
+    "ignoreCorsAndCsp": false,
+    "ignoreSslErrors": false,
+    "injectJQuery": false,
+    "keepUrlFragments": false,
+    "maxConcurrency": 1,
+    "maxRequestRetries": 1,
+    "maxRequestsPerCrawl": 1,
+    "pageFunction": "async function pageFunction(context) {\n    const { page, request, log } = context;\n    \n    log.info(`Procesando: ${request.url}`);\n    \n    // Esperar a que cargue la página\n    await page.waitForSelector('body', { timeout: 10000 });\n    \n    // Extraer el código fuente HTML completo\n    const htmlContent = await page.content();\n    \n    // Devolver el contenido HTML tal cual\n    return {\n        url: request.url,\n        html: htmlContent,\n        extractedAt: new Date().toISOString()\n    };\n}",
+    "proxyConfiguration": {
+        "useApifyProxy": true,
+        "apifyProxyGroups": [
+            "RESIDENTIAL"
+        ]
+    },
+    "respectRobotsTxtFile": false,
+    "startUrls": [
+        {
+            "url": "https://motos.coches.net/segunda-mano/?fi=SortDate&or=-1&hasPhoto=&onlyPeninsula=false&Section1Id=3000&MakeIds%5B0%5D=7&Models%5B0%5D=R%20nineT&pg=7"
+        },
+        {
+            "url": "https://motos.coches.net/segunda-mano/?fi=SortDate&or=-1&hasPhoto=&onlyPeninsula=false&Section1Id=3000&MakeIds%5B0%5D=7&Models%5B0%5D=R%20nineT&pg=8"
+        }
+    ],
+    "useChrome": false,
+    "useRequestQueue": false,
+    "verboseLog": true
+}
+
+--------------------------------------------------------------------------
+  "items":[
+  {"bodyTypeId":14,
+   "creationDate":"2025-10-01T19:35:32Z",
+   "hp":110,
+   "fuelType":"Gasolina",
+   "fuelTypeId":2,
+   "hasWarranty":true,
+   "id":"8796371",
+   "img":"https://a.mcdn.es/mnet/2025/10/01/8796371/32723888_g.jpg",
+   "imgUrl":"https://a.mcdn.es/mnet/2025/10/01/8796371/32723888_g.jpg/359x269cut/",
+   "isCertified":false,
+   "isFinanced":true,
+   "isTop":true,
+   "isUrgent":false,
+   "isProfessional":true,
+   "isUrlSemantic":true,
+   "km":10326,
+   "location":{"provinceIds":[28],"regionId":14,"regionLiteral":"Madrid","mainProvince":"Madrid","mainProvinceId":28},
+   "make":"BMW",
+   "makeId":7,
+   "modelId":5326,
+   "pack":{"legacyId":20,"type":"reference"},
+   "price":12550,
+   "url":"/ocasion/bmw/r_ninet/scrambler-2022-en-madrid-8796371.htm",
+	"offerType":{"id":0,"literal":"Ocasi\\u00F3n"},
+	"phone":"912170152",
+	"photos":[""],
+	"provinceId":28,
+	"publicationDate":"2025-10-01T19:35:32Z",
+	 "specificFuelTypeId":2,
+	 "title":"BMW R nineT Scrambler",
+	 "videos":[],
+	 "warrantyText":"12 MESES",
+	 "year":2022,
+	 "seller":{"name":"Motocasi\\u00F3nweb",
+				"isProfessional":true,
+				"contractId":"1000286",
+				"pack":{"legacyId":20, "type":"reference"}}
+  }
+  ]
+	
