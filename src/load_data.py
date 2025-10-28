@@ -1,6 +1,6 @@
-﻿"""Utilidades para cargar datos JSON desde `data/raw`.
+"""Utilidades para cargar datos JSON desde `data/raw`.
 
-Este mÃ³dulo ofrece funciones para:
+Este módulo ofrece funciones para:
 - Listar todos los files_json `.json` existentes en un directorio.
 - Cargar el contenido de esos `.json` en memoria.
 """
@@ -22,14 +22,14 @@ def list_json_flies(PATH_ROW, recursivo: bool = False) -> List[Path]:
 
     Args:
         directorio: Ruta del directorio a inspeccionar.
-        recursivo: Si es True, busca tambiÃ©n en subdirectorios.
+        recursivo: Si es True, busca también en subdirectorios.
 
     Returns:
         Lista de rutas (`Path`) a files_json `.json`.
     """
     base = Path(PATH_ROW)
     if not base.exists() or not base.is_dir():
-        raise FileNotFoundError(f"No se encontrÃ³ el directorio: {base}")
+        raise FileNotFoundError(f"No se encontro el directorio: {base}")
 
     patron = "**/*.json" if recursivo else "*.json"
     return [p for p in sorted(base.glob(patron)) if p.is_file()]
@@ -43,8 +43,8 @@ def read_json_files(rutas: List[str | Path], estricto: bool = True) -> List[Any]
 
     Args:
         rutas: Lista o conjunto de rutas a files_json `.json`.
-        estricto: Si True, lanza excepciÃ³n ante JSON invÃ¡lido; de lo
-                  contrario, ignora files_json con errores y continÃºa.
+        estricto: Si True, lanza excepción ante JSON inválido; de lo
+                  contrario, ignora files_json con errores y continúa.
 
     Returns:
         Lista con el contenido JSON de cada archivo.
@@ -52,7 +52,7 @@ def read_json_files(rutas: List[str | Path], estricto: bool = True) -> List[Any]
     Nota:
         No se devuelve un `set` porque los objetos JSON (dict/list) no son
         hashables. Si necesitas eliminar duplicados, puedes convertir cada
-        elemento a cadena con `json.dumps(..., sort_keys=True)` y operar allÃ­.
+        elemento a cadena con `json.dumps(..., sort_keys=True)` y operar allí.
     """
     resultados: List[Any] = []
     for r in rutas:
@@ -67,10 +67,9 @@ def read_json_files(rutas: List[str | Path], estricto: bool = True) -> List[Any]
             resultados.append(datos)
         except json.JSONDecodeError as e:
             if estricto:
-                raise ValueError(f"JSON invÃ¡lido en {ruta}: {e}") from e
+                raise ValueError(f"JSON invǭlido en {ruta}: {e}") from e
             # En modo no estricto, omitimos files_json con error
     return resultados
-
 
 def get_html_from_json(
     datos_json: Any,
@@ -84,14 +83,14 @@ def get_html_from_json(
     y devuelve:
         [ {"html": ...}, {"html": ...}, ... ]
 
-    TambiÃ©n funciona si `datos_json` es una lista (o lista de listas) de
+    También funciona si `datos_json` es una lista (o lista de listas) de
     registros tipo dict. Recorre recursivamente y extrae cualquier dict que
     contenga la clave indicada.
 
     Args:
         datos_json: Estructura con registros que incluyen la clave de HTML.
         clave: Nombre de la clave a extraer (por defecto "html").
-        omitir_vacios: Si True, omite valores vacÃ­os o None.
+        omitir_vacios: Si True, omite valores vacíos o None.
 
     Returns:
         Lista de diccionarios con solo la clave de HTML.
@@ -121,8 +120,7 @@ def get_html_from_json(
     return resultados
 
 
-
-# RedefiniciÃ³n: get_txt_between_from_html para trabajar sobre contenido_html
+# Redefinición: get_txt_between_from_html para trabajar sobre contenido_html
 def get_txt_between_from_html(
     contenido_html: Any,
     ini_text: str ='"items":[{"bodyTypeId":',
@@ -130,8 +128,8 @@ def get_txt_between_from_html(
 ) -> List[str]:
     """Extrae, para cada HTML, el bloque entre `inicio` y `fin` y reconstruye \"items\": [...].
 
-    Entrada admitida: lista de dicts con clave 'html', lista de strings o string Ãºnico.
-    Del marcador final elimina ,\"totalPages\" (o su versiÃ³n escapada) para formar "items": [...].
+    Entrada admitida: lista de dicts con clave 'html', lista de strings o string único.
+    Del marcador final elimina ,\"totalPages\" (o su versión escapada) para formar "items": [...].
     """
     textos: List[str] = []
     if isinstance(contenido_html, str):
@@ -166,10 +164,6 @@ def get_txt_between_from_html(
         fragmento = f"{ini_text}{cuerpo}{fin_text}"
         resultados.append(fragmento)
     return resultados
-
-
-
-
 def _find_json_array_after_items(s: str) -> str:
     key = '"items":['
     start = s.find(key)
@@ -210,7 +204,7 @@ def get_parse_item(extrae_items: Union[str, List[str]], extrac_list: List[str] =
         'precio': 'price',
         'price': 'price',
         'year': 'year',
-        'aÃ±o': 'year',
+        'año': 'year',
         'anio': 'year',
         'url': 'url',
     }
@@ -238,11 +232,11 @@ def get_parse_item(extrae_items: Union[str, List[str]], extrac_list: List[str] =
                 continue
             row = {}
 
-            # siempre Ãºtil aÃ±adir id si estÃ¡
+            # siempre útil añadir id si está
             if 'id' in obj:
                 row['id'] = obj.get('id')
 
-            # aÃ±ade url siempre que exista, normalizada
+            # añade url siempre que exista, normalizada
             if 'url' in obj:
                 row['url'] = _normalize_url(obj.get('url'))
 
@@ -263,10 +257,8 @@ def get_parse_item(extrae_items: Union[str, List[str]], extrac_list: List[str] =
 
     return resultados
 
-
-
 def get_items_json (PATH_ROW) -> List[Any]:
-    """EjecuciÃ³n ad-hoc: carga JSON por rutas y extrae `items`."""
+    """Ejecución ad-hoc: carga JSON por rutas y extrae `items`."""
     p = Path(PATH_ROW)
     files_json = []
     if p.is_file() or p.suffix.lower() == '.json':
