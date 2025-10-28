@@ -12,6 +12,7 @@ from typing import List, Union
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+PATH_ROW = "data/raw"
 BASE_URL = "https://motos.coches.net/"
 EXTRACT_LIST = ['title','km', 'price', 'year','url','imgUrl','provinceId']
 
@@ -264,10 +265,10 @@ def get_parse_item(extrae_items: Union[str, List[str]], extrac_list: List[str] =
 
 
 
-def main() -> None:
+def get_items_json (PATH_ROW="data/raw") -> List[Any]:
     """Ejecución ad-hoc: carga JSON por rutas y extrae `items`."""
     try:
-        files_json = list_json_flies("data/raw", recursivo=False)
+        files_json = list_json_flies(PATH_ROW, recursivo=False)
     except FileNotFoundError as e:
         print(e)
         return
@@ -287,6 +288,8 @@ def main() -> None:
 
     print(f"Extaidos  {len(items_json)} contenidos ITMEMS")
 
+    return items_json
 
-if __name__ == "__main__":
-    main()
+
+#if __name__ == "__main__":
+#    main()
