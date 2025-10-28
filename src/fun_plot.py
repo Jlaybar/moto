@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.optimize import curve_fit
 
 from bokeh.io import output_notebook, show
+from bokeh.resources import INLINE
 from bokeh.plotting import figure
 from bokeh.models import (
     ColumnDataSource, HoverTool, TapTool, OpenURL, NumeralTickFormatter, Label, ColorBar,
@@ -12,7 +13,7 @@ from bokeh.transform import linear_cmap
 from bokeh.palettes import Blues256
 from bokeh.layouts import column
 
-output_notebook()
+output_notebook(INLINE)
 
 
 def plot_price_km_v2(result, MODELO):
