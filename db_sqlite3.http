@@ -1,0 +1,70 @@
+### Flask DB API - Health
+
+GET http://localhost:5000/health
+
+
+### Listar tablas
+
+GET http://localhost:5000/db/tables?db=dev.db
+
+
+### Esquema de una tabla (ejemplo: users)
+
+GET http://localhost:5000/db/table_schema?tabla=users&db=dev.db
+
+
+### Leer registros (todas las columnas)
+
+GET http://localhost:5000/db/read?tabla=users&campos=*&db=dev.db
+
+
+### Insertar registro
+POST http://localhost:5000/db/insert
+Content-Type: application/json
+
+{
+  "tabla": "usuarios",
+  "valores": {
+    "nombre": "Pedro",
+    "email": "user{{$timestamp}}@example.com",
+    "edad": "12"
+  },
+  "db": "dev.db"
+}
+
+
+### Actualizar registro(s)
+POST http://localhost:5000/db/update
+Content-Type: application/json
+
+{
+  "tabla": "usuarios",
+  "campo": "nombre",
+  "valor": "Juan",
+  "condicion_sql": "email LIKE 'user%@example.com'",
+  "db": "dev.db"
+}
+
+
+### Borrar por PK (id)
+POST http://localhost:5000/db/delete_pk
+Content-Type: application/json
+
+{
+  "tabla": "usuarios",
+  "pk": "id",
+  "valor": 1,
+  "db": "dev.db"
+}
+
+
+### Borrar con condición libre
+POST http://localhost:5000/db/delete
+Content-Type: application/json
+
+{
+  "tabla": "usuarios",
+  "condicion_sql": "email LIKE 'user%@example.com'",
+  "db": "dev.db"
+}
+

@@ -6,24 +6,18 @@ import express from 'express';
 import cookieSession from 'cookie-session';
 import crypto from 'node:crypto';
 import { google } from 'googleapis';
-import { PrismaClient } from '@prisma/client';
+// Prisma removed: DB handled by Flask service
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const PORT = 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure SQLite path exists and set default DATABASE_URL if missing
-const dataDir = path.join(process.cwd(), 'prisma');
-const dbFile = path.join(dataDir, 'dev.db');
-try { fs.mkdirSync(dataDir, { recursive: true }); } catch {}
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'file:' + dbFile.replace(/\\/g, '/');
-}
+// Prisma/DB bootstrap removed. Node only serves chat/Gmail.
 
 // SSE clients
 const CLIENTS = new Set();
 const app = express();
-const prisma = new PrismaClient();
+// Prisma client removed
 
 // CORS middleware (simple, sin dependencia externa)
 app.use((req, res, next) => {
@@ -251,74 +245,7 @@ app.post('/clear', (req, res) => {
   res.status(202).json({ ok: true });
 });
 
-// ----------------------------------------------------
-//          SERVICIO DB
-// ----------------------------------------------------
-// Prisma-based user endpoints
-app.get('/users', async (req, res) => {
-  try {
-    const users = await prisma.user.findMany({ select: { id: true, email: true, createdAt: true } });
-    res.json(users);
-  } catch (e) {
-    res.status(500).json({ error: 'db_error', detail: String(e?.message || e) });
-  }
-});
-
-// Count must be declared before parameterized routes or restrict :id
-app.get('/users/count', async (req, res) => {
-  try {
-    const count = await prisma.user.count();
-    res.json({ count });
-  } catch (e) {
-    res.status(500).json({ error: 'db_error', detail: String(e?.message || e) });
-  }
-});
-
-app.get('/users/:id', async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid id' });
-  try {
-    const user = await prisma.user.findUnique({ where: { id }, select: { id: true, email: true, createdAt: true } });
-    if (!user) return res.status(404).json({ error: 'not found' });
-    res.json(user);
-  } catch (e) {
-    res.status(500).json({ error: 'db_error', detail: String(e?.message || e) });
-  }
-});
-
-app.post('/users', async (req, res) => {
-  const email = String(req.body?.email || '').trim();
-  const password = String(req.body?.password || '').trim();
-  if (!email || !password) return res.status(400).json({ error: 'email/password requeridos' });
-  try {
-    const user = await prisma.user.create({ data: { email, password } });
-    res.status(201).json({ id: user.id, email: user.email, createdAt: user.createdAt });
-  } catch (e) {
-    res.status(500).json({ error: 'db_error', detail: String(e?.message || e) });
-  }
-});
-
-// DB health and quick stats
-app.get('/db/health', async (req, res) => {
-  try {
-    // Lightweight connectivity check that works on SQLite
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ ok: true, url: process.env.DATABASE_URL || null });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: 'db_error', detail: String(e?.message || e) });
-  }
-});
-
-app.delete('/users/:id', async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid id' });
-  try {
-    await prisma.user.delete({ where: { id } });
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: 'db_error', detail: String(e?.message || e) });
-  }
-});
+// DB endpoints removed. Use Flask service on port 5000 for DB APIs.
 
 // Serve index: prefer public/index.html, fallback to docs/index.html
 app.get(['/', '/index.html'], (req, res) => {
@@ -342,10 +269,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('  GET    /events   (SSE stream)');
   console.log('  POST   /message  {"user","text"}');
   console.log('  POST   /clear    (limpiar chat)');
-  console.log('  GET    /users');
-  console.log('  GET    /users/:id');
-  console.log('  POST   /users    {"email","password"}');
-  console.log('  DELETE /users/:id');
   console.log('  GET    /gmail/auth/login        (OAuth inicio)');
   console.log('  GET    /gmail/auth/callback     (OAuth callback)');
   console.log('  POST   /gmail/send              {"to","subject","message"}');
@@ -355,5 +278,5 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 });
 
 // Graceful shutdown
-process.on('SIGINT', async () => { await prisma.$disconnect(); server.close(() => process.exit(0)); });
-process.on('SIGTERM', async () => { await prisma.$disconnect(); server.close(() => process.exit(0)); });
+process.on('SIGINT', async () => { server.close(() => process.exit(0)); });
+process.on('SIGTERM', async () => { server.close(() => process.exit(0)); });
