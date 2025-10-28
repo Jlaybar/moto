@@ -1,26 +1,30 @@
 """Utilidades para cargar datos JSON desde `data/raw`.
 
 Este módulo ofrece funciones para:
-- Listar todos los archivos `.json` existentes en un directorio.
+- Listar todos los files_json `.json` existentes en un directorio.
 - Cargar el contenido de esos `.json` en memoria.
 """
 
 from __future__ import annotations
 
 import json
+from typing import List, Union
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+BASE_URL = "https://motos.coches.net/"
+EXTRACT_LIST = ['title','km', 'price', 'year','url','imgUrl','provinceId']
 
-def listar_archivos_json(directorio: str | Path = "data/raw", recursivo: bool = False) -> List[Path]:
-    """Devuelve la lista de archivos `.json` en el directorio dado.
+
+def list_json_flies(directorio: str | Path = "data/raw", recursivo: bool = False) -> List[Path]:
+    """Devuelve la lista de files_json `.json` en el directorio dado.
 
     Args:
         directorio: Ruta del directorio a inspeccionar.
         recursivo: Si es True, busca también en subdirectorios.
 
     Returns:
-        Lista de rutas (`Path`) a archivos `.json`.
+        Lista de rutas (`Path`) a files_json `.json`.
     """
     base = Path(directorio)
     if not base.exists() or not base.is_dir():
@@ -30,16 +34,16 @@ def listar_archivos_json(directorio: str | Path = "data/raw", recursivo: bool = 
     return [p for p in sorted(base.glob(patron)) if p.is_file()]
 
 
-def cargar_todos_los_json(rutas: List[str | Path], estricto: bool = True) -> List[Any]:
-    """Carga todos los archivos `.json` de un conjunto de rutas.
+def read_json_files(rutas: List[str | Path], estricto: bool = True) -> List[Any]:
+    """Carga todos los files_json `.json` de un conjunto de rutas.
 
     Lee cada archivo `.json` provisto en `rutas` y devuelve una lista con
     el contenido parseado de cada uno, en el mismo orden de entrada.
 
     Args:
-        rutas: Lista o conjunto de rutas a archivos `.json`.
+        rutas: Lista o conjunto de rutas a files_json `.json`.
         estricto: Si True, lanza excepción ante JSON inválido; de lo
-                  contrario, ignora archivos con errores y continúa.
+                  contrario, ignora files_json con errores y continúa.
 
     Returns:
         Lista con el contenido JSON de cada archivo.
@@ -63,11 +67,11 @@ def cargar_todos_los_json(rutas: List[str | Path], estricto: bool = True) -> Lis
         except json.JSONDecodeError as e:
             if estricto:
                 raise ValueError(f"JSON inválido en {ruta}: {e}") from e
-            # En modo no estricto, omitimos archivos con error
+            # En modo no estricto, omitimos files_json con error
     return resultados
 
 
-def extrae_html(
+def get_html_from_json(
     datos_json: Any,
     clave: str = "html",
     omitir_vacios: bool = True,
@@ -116,125 +120,172 @@ def extrae_html(
     return resultados
 
 
- 
 
-
-def _marker_variants(m: str) -> List[str]:
-    """Genera variantes del marcador con y sin escapes de comillas.
-
-    Incluye:
-    - El marcador tal cual.
-    - Versión con `\"` reemplazado por `"`.
-    - Versión con `"` reemplazado por `\"`.
-    - Versión sin espacios extremos.
-    """
-    return list({
-        m,
-        m.strip(),
-        m.replace(r'\"', '"'),
-        m.replace('"', r'\"'),
-    })
-
-
-def extrae_texto_json_entre(
+# Redefinición: get_txt_between_from_html para trabajar sobre contenido_html
+def get_txt_between_from_html(
     contenido_html: Any,
-    inicio: str = '"items":[',
-    fin: str = '],"totalPages"',
-    omitir_vacios: bool = True,
+    ini_text: str ='"items":[{"bodyTypeId":',
+    fin_text: str = '}],"totalPages"'
 ) -> List[str]:
-    """Extrae, para cada HTML, el bloque entre `inicio` y `fin` y reconstruye "items": [...].
+    """Extrae, para cada HTML, el bloque entre `inicio` y `fin` y reconstruye \"items\": [...].
 
-    Entrada admitida:
-    - Lista de dicts con clave "html" (salida de `extrae_html`).
-    - Lista de strings.
-    - String único.
-
-    Busca `inicio` y `fin` (probando variantes con y sin escapes). Del
-    marcador final elimina la subcadena `,"totalPages"` (y su variante
-    escapada) para que el resultado quede como "items": [ ... ].
-
-    Args:
-        contenido_html: Contenido(s) HTML donde buscar.
-        inicio: Marcador inicial. Por defecto '"items":['.
-        fin: Marcador final. Por defecto '],"totalPages"'.
-        omitir_vacios: Si True, omite entradas sin coincidencias.
-
-    Returns:
-        Lista de strings con fragmentos reconstruidos "items": [...].
+    Entrada admitida: lista de dicts con clave 'html', lista de strings o string único.
+    Del marcador final elimina ,\"totalPages\" (o su versión escapada) para formar "items": [...].
     """
-
-    # Normalizar a lista de textos
     textos: List[str] = []
     if isinstance(contenido_html, str):
         textos = [contenido_html]
     elif isinstance(contenido_html, list):
         for elem in contenido_html:
-            if isinstance(elem, dict) and "html" in elem and isinstance(elem["html"], str):
-                textos.append(elem["html"])
+            if isinstance(elem, dict) and 'html' in elem and isinstance(elem['html'], str):
+                textos.append(elem['html'])
             elif isinstance(elem, str):
                 textos.append(elem)
             elif isinstance(elem, list):
                 for sub in elem:
-                    if isinstance(sub, dict) and "html" in sub and isinstance(sub["html"], str):
-                        textos.append(sub["html"])
+                    if isinstance(sub, dict) and 'html' in sub and isinstance(sub['html'], str):
+                        textos.append(sub['html'])
                     elif isinstance(sub, str):
                         textos.append(sub)
-    elif isinstance(contenido_html, dict) and "html" in contenido_html and isinstance(contenido_html["html"], str):
-        textos = [contenido_html["html"]]
+    elif isinstance(contenido_html, dict) and 'html' in contenido_html and isinstance(contenido_html['html'], str):
+        textos = [contenido_html['html']]
 
     resultados: List[str] = []
-
     for contenido in textos:
-        inicio_idx: int | None = None
-        inicio_literal: str | None = None
-        for variante in _marker_variants(inicio):
-            pos = contenido.find(variante)
-            if pos != -1:
-                inicio_literal = variante
-                inicio_idx = pos + len(variante)
-                break
-
-        if inicio_idx is None:
-            if not omitir_vacios:
-                resultados.append("")
-            continue
-
-        fin_idx: int | None = None
-        fin_literal: str | None = None
-        for variante in _marker_variants(fin):
-            pos = contenido.find(variante, inicio_idx)
-            if pos != -1:
-                fin_idx = pos
-                fin_literal = variante
-                break
-
-        if fin_idx is None or fin_literal is None:
-            if not omitir_vacios:
-                resultados.append("")
-            continue
-
-        cuerpo = contenido[inicio_idx:fin_idx]
-
-        # Limpiar ,"totalPages" o su versión escapada del marcador final
-        fin_limpio = fin_literal.replace(',"totalPages"', "").replace(',\\"totalPages\\"', "")
-
-        fragmento = f"{inicio_literal}{cuerpo}{fin_limpio}"
+        contenido = contenido.replace("\\", "")  
+        ini = contenido.find(ini_text)
+        if ini == -1:
+            return ""
+        ini += len(ini_text)
+        fin = contenido.find(fin_text, ini)
+        if fin == -1:
+            return ""
+        cuerpo = contenido[ini:fin]
+        fin_text= fin_text.replace(',\"totalPages\"', '')
+        fragmento = f"{ini_text}{cuerpo}{fin_text}"
         resultados.append(fragmento)
+    return resultados
+
+
+
+
+def _find_json_array_after_items(s: str) -> str:
+    key = '"items":['
+    start = s.find(key)
+    if start == -1:
+        return ""
+    i = start + len(key) - 1
+    depth = 0
+    arr_start = None
+    for pos in range(i, len(s)):
+        ch = s[pos]
+        if ch == '[':
+            if depth == 0:
+                arr_start = pos
+            depth += 1
+        elif ch == ']':
+            depth -= 1
+            if depth == 0 and arr_start is not None:
+                return s[arr_start:pos+1]
+    return ""
+
+def _normalize_url(url: str) -> str:
+    if not url:
+        return url
+    u = url.strip()
+    if u.startswith("http://") or u.startswith("https://"):
+        return u
+    # Evita doble barra al unir
+    if u.startswith("/"):
+        u = u[1:]
+    return BASE_URL + u
+
+def get_parse_item(extrae_items: Union[str, List[str]], extrac_list: List[str] = None) -> List[dict]:
+    if extrac_list is None:
+        extrac_list = ['km', 'precio', 'year']
+
+    norm_map = {
+        'km': 'km',
+        'precio': 'price',
+        'price': 'price',
+        'year': 'year',
+        'año': 'year',
+        'anio': 'year',
+        'url': 'url',
+    }
+    wanted = [norm_map.get(f.lower(), f) for f in extrac_list]
+
+    chunks = [extrae_items] if isinstance(extrae_items, str) else list(extrae_items)
+    resultados = []
+
+    for chunk in chunks:
+        if not isinstance(chunk, str):
+            continue
+        arr_text = _find_json_array_after_items(chunk)
+        if not arr_text:
+            continue
+
+        try:
+            items = json.loads(arr_text)
+            if not isinstance(items, list):
+                continue
+        except json.JSONDecodeError:
+            continue
+
+        for obj in items:
+            if not isinstance(obj, dict):
+                continue
+            row = {}
+
+            # siempre útil añadir id si está
+            if 'id' in obj:
+                row['id'] = obj.get('id')
+
+            # añade url siempre que exista, normalizada
+            if 'url' in obj:
+                row['url'] = _normalize_url(obj.get('url'))
+
+            for f in wanted:
+                val = obj.get(f, None)
+
+                if f == 'url':
+                    row['url'] = _normalize_url(val)
+                    continue
+
+                if isinstance(val, str) and f in ('km', 'price', 'year'):
+                    num = ''.join(ch for ch in val if ch.isdigit())
+                    val = int(num) if num else None
+
+                row[f] = val
+
+            resultados.append(row)
 
     return resultados
+
 
 
 def main() -> None:
     """Ejecución ad-hoc: carga JSON por rutas y extrae `items`."""
     try:
-        archivos = listar_archivos_json("data/raw", recursivo=False)
+        files_json = list_json_flies("data/raw", recursivo=False)
     except FileNotFoundError as e:
         print(e)
         return
 
-    print(f"Encontrados {len(archivos)} archivo(s) .json en data/raw")
-    contenidos = cargar_todos_los_json(archivos, estricto=False)
-    print(f"Cargados {len(contenidos)} archivo(s) JSON")
+    print(f"Cargados {len(files_json)} archivo(s) JSON")
+
+    content_json= read_json_files(files_json)
+    print(f"Extaidos {len(content_json)} contenidos JSON")
+
+    content_html = get_html_from_json(content_json)
+    print(f"Extaidos {len(content_html)} contenidos HTML")
+
+    content_items = get_txt_between_from_html(content_html)
+    print(f"Extaidos  {len(content_items)} contenidos ITMEMS")
+
+    items_json = get_parse_item(content_items , extrac_list=EXTRACT_LIST)
+
+    print(f"Extaidos  {len(items_json)} contenidos ITMEMS")
 
 
 if __name__ == "__main__":
