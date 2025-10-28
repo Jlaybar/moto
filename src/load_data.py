@@ -12,9 +12,9 @@ from typing import List, Union
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-PATH_ROW = "data/raw"
+
 BASE_URL = "https://motos.coches.net/"
-EXTRACT_LIST = ['title','km', 'price', 'year','url','imgUrl','provinceId']
+EXTRACT_LIST = ['title','km', 'price', 'year','url','imgUrl','provinceId','hp']
 
 
 def list_json_flies(directorio: str | Path = "data/raw", recursivo: bool = False) -> List[Path]:
@@ -265,7 +265,7 @@ def get_parse_item(extrae_items: Union[str, List[str]], extrac_list: List[str] =
 
 
 
-def get_items_json (PATH_ROW="data/raw") -> List[Any]:
+def get_items_json (PATH_ROW) -> List[Any]:
     """Ejecución ad-hoc: carga JSON por rutas y extrae `items`."""
     try:
         files_json = list_json_flies(PATH_ROW, recursivo=False)
