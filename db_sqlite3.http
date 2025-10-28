@@ -4,6 +4,7 @@ GET http://localhost:5000/health
 
 
 ### Listar tablas
+
 GET http://localhost:5000/db/tables?db=dev.db
 
 
@@ -38,9 +39,9 @@ Content-Type: application/json
 
 {
   "tabla": "usuarios",
-  "campo": "edad",
-  "valor": "21",
-  "condicion_sql": "nombre LIKE 'Pedro'",
+  "campo": "nombre",
+  "valor": "Juan",
+  "condicion_sql": "email LIKE 'user%@example.com'",
   "db": "dev.db"
 }
 
