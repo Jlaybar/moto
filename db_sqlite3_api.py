@@ -132,6 +132,62 @@ def db_read(
     finally:
         conn.close()
 
+
+def db_read_dict(
+    tabla: str,
+    campos: Optional[List[str]] = None,
+    condicion_sql: Optional[str] = None,
+    data_db: str = SQLITE_PATH,
+) -> List[Dict[str, Any]]:
+    """
+    Lee registros de una tabla SQLite y devuelve una lista de diccionarios.
+    
+    SELECT <campos> FROM <tabla> [WHERE <condicion_sql>]
+    - tabla: nombre de la tabla
+    - campos: lista de columnas o None/'*' para todas
+    - condicion_sql: cláusula WHERE cruda (sin "WHERE")
+    
+    Retorna:
+      [
+        {'id': '...', 'url': '...', 'title': '...', ...},
+        {...},
+      ]
+    """
+    t = validate_identifier(tabla, "table name")
+
+    # --- Construir lista de columnas ---
+    if not campos or (isinstance(campos, list) and len(campos) == 0):
+        col_expr = "*"
+    else:
+        # Permite pasar ['*'] o lista normal
+        if isinstance(campos, list):
+            if len(campos) == 1 and campos[0] == "*":
+                col_expr = "*"
+            else:
+                safe_cols = [validate_identifier(c, "column name") for c in campos]
+                col_expr = ", ".join(safe_cols)
+        else:
+            raise ValueError("'campos' debe ser una lista de nombres de columna o estar vacío para '*'.")
+    
+    # --- Construir SQL ---
+    sql = f"SELECT {col_expr} FROM {t}"
+    if condicion_sql:
+        sql += f" WHERE {condicion_sql}"
+
+    conn = get_db_connection(data_db)
+    try:
+        cur = conn.cursor()
+        cur.execute(sql)
+        rows = cur.fetchall()
+        columns = [col[0] for col in cur.description] if cur.description else []
+
+        # --- Convertir a lista de dicts ---
+        resultados = [dict(zip(columns, row)) for row in rows]
+        return resultados
+    finally:
+        conn.close()
+
+
 def db_tables(data_db: str = SQLITE_PATH) -> List[str]:
     """
     Devuelve el listado de tablas de la base de datos (excluyendo tablas internas de SQLite).

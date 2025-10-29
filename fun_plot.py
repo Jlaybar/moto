@@ -13,10 +13,12 @@ from bokeh.transform import linear_cmap
 from bokeh.palettes import Blues256
 from bokeh.layouts import column
 
+from db_sqlite3_api  import db_read_dict
+
 output_notebook(INLINE)
 
 
-def plot_price_km_v2(result, MODELO):
+def plot_price_km_db(MODELO):
     """
     Grafica interactiva (Bokeh) Precio vs Kilómetros para un MODELO.
     Lee una lista de dicts con claves: id, url, title, km, price, year, imgUrl, provinceId.
@@ -25,11 +27,10 @@ def plot_price_km_v2(result, MODELO):
     import math
 
     # === Preparar DataFrame y filtrar por modelo (ahora usamos 'title') ===
-    df = pd.DataFrame(result)
-    if 'title' in df.columns:
-        df = df[df['title'].astype(str).str.contains(MODELO, case=False, na=False)]
-    registros = df.to_dict(orient='records')
-
+    registros = db_read_dict(tabla='data_moto', 
+              campos=['title', 'km','price','year','url'], 
+              condicion_sql = f"title = '{MODELO}'  "
+              )
     # === Lectura directa de campos: price, km, url, year ===
     def _coerce_year(y):
         try:
@@ -313,7 +314,7 @@ if (filt_y) {
 
 
 
-def plot_price_km_v1(result, MODELO):
+def plot_price_km_json(result,MODELO):
     """
     Grafica interactiva (Bokeh) Precio vs Kilómetros para un MODELO.
     - Fondo blanco, textos/etiquetas en negro; grid gris suave.
@@ -327,86 +328,47 @@ def plot_price_km_v1(result, MODELO):
 
     # Preparar DataFrame y filtrar por modelo
     df = pd.DataFrame(result)
-    if 'name' in df.columns:
-        df = df[df['name'].astype(str).str.contains(MODELO, case=False, na=False)]
-
     registros = df.to_dict(orient='records')
 
-    def _parse_year(item):
-        for k in ('year','anio','año','model_year','year_model','registration_year'):
-            if k in item and item[k] is not None:
-                try:
-                    y = int(str(item[k]).strip())
-                    if 1980 <= y <= 2035:
-                        return y
-                except Exception:
-                    pass
-        attrs = item.get('attributes')
-        if isinstance(attrs, (list, tuple)):
-            for s in attrs:
-                if not isinstance(s, str):
-                    continue
-                m = re.search(r'(19|20)\d{2}', s)
-                if m:
-                    y = int(m.group(0))
-                    if 1980 <= y <= 2035:
-                        return y
-        name = item.get('name')
-        if isinstance(name, str):
-            m = re.search(r'(19|20)\d{2}', name)
-            if m:
-                y = int(m.group(0))
-                if 1980 <= y <= 2035:
-                    return y
+     # === Lectura directa de campos: price, km, url, year ===
+    def _coerce_year(y):
+        try:
+            y = int(str(y).strip())
+            if 1980 <= y <= 2035:
+                return y
+        except Exception:
+            pass
         return None
 
     kms, precios, urls, years = [], [], [], []
     for it in registros:
-        precio = it.get('price')
+        precio = it.get('price', None)
+        km_val = it.get('km', None)
+        url = it.get('url', None)
+        year_val = _coerce_year(it.get('year', None))
+
         if precio is None or (isinstance(precio, float) and math.isnan(precio)):
             continue
+        if km_val is None or (isinstance(km_val, float) and math.isnan(km_val)):
+            continue
 
-        km_val = None
-        attrs = it.get('attributes')
-        if isinstance(attrs, (list, tuple)):
-            for attr in attrs:
-                if not isinstance(attr, str):
-                    continue
-                if 'km' in attr.lower():
-                    try:
-                        s = attr.split(' km')[0].replace('.', '').replace(',', '').strip()
-                        km_val = int(s)
-                        break
-                    except Exception:
-                        continue
-
-        url = None
-        for k in ('url','permalink','perma_link','link','href','permalink_url'):
-            v = it.get(k)
-            if isinstance(v, str) and v.strip():
-                url = v.strip()
-                break
-
-        year_val = _parse_year(it)
-
-        if km_val is not None and precio is not None:
-            kms.append(int(km_val))
-            precios.append(float(precio))
-            urls.append(url or 'javascript:void(0)')
-            years.append(year_val)
+        kms.append(int(km_val))
+        precios.append(float(precio))
+        urls.append(url if isinstance(url, str) and url.strip() else 'javascript:void(0)')
+        years.append(year_val)
 
     if len(kms) == 0:
         print('Sin datos válidos para graficar')
         return
 
-    # Ordenar por km para línea de ajuste
+    # === Ordenar por km para línea de ajuste (sin cambios) ===
     order = np.argsort(kms)
     kms_arr = np.array(kms)[order]
     precios_arr = np.array(precios)[order]
     urls_arr = np.array(urls, dtype=object)[order]
     years_arr = np.array(years, dtype=object)[order]
 
-    # Ajuste exponencial (visual)
+    # === Ajuste exponencial (igual) ===
     def exp_func(x, a, b, c):
         return a * np.exp(b * x) + c
 
@@ -424,7 +386,7 @@ def plot_price_km_v1(result, MODELO):
     else:
         eq_text = 'Datos insuficientes para ajuste'
 
-    # Clasificación chollo/caro (modelo simple OLS robustecida con MAD)
+    # === Clasificación chollo/caro (igual) ===
     x_log = np.log1p(kms_arr).astype(float)
     yrs_num = np.array([np.nan if y is None else float(y) for y in years_arr])
     mask_fit = ~np.isnan(yrs_num)
@@ -467,7 +429,7 @@ def plot_price_km_v1(result, MODELO):
         z_scores = np.zeros_like(precios_arr, dtype=float)
         tags = ['sin_año' if (y is None) else 'normal' for y in years_arr]
 
-    # Construcción de fuentes: con año y sin año
+    # === Construcción de fuentes (igual) ===
     mask_year = np.array([y is not None for y in years_arr])
 
     def _fmt_eur(v): return f'{v:,.0f}€'.replace(',', '.')
@@ -515,29 +477,14 @@ def plot_price_km_v1(result, MODELO):
     white = '#FFFFFF'
     gray = '#DDDDDD'
 
-    # MODIFICACIÓN PRINCIPAL: Configuración del título con subtítulo
+    # === Títulos (igual) ===
     p = figure(width=900, height=600, background_fill_color=white, toolbar_location='above')
-    
-    # Eliminar título por defecto
     p.title = None
-    
-    # Añadir título principal en azul
-    p.add_layout(Title(
-        text='Relación Precio vs Kilómetros', 
-        text_font_size='16pt',  # Mismo tamaño que el título
-        text_color=black
-    ), 'above')
+    p.add_layout(Title(text='Relación Precio vs Kilómetros', text_font_size='16pt', text_color=black), 'above')
+    p.add_layout(Title(text=MODELO, text_font_style='bold', text_font_size='20pt', text_color=bright_blue), 'above')
 
-    p.add_layout(Title(
-        text=MODELO, 
-        text_font_style='bold', 
-        text_font_size='20pt',
-        text_color=bright_blue
-    ), 'above')
-    
-
-    # Configuración del resto de propiedades (manteniendo tu código original)
-    p.min_border_top = 90  # Aumentado para acomodar ambos títulos
+    # === Estética (igual) ===
+    p.min_border_top = 90
     p.axis.axis_line_color = black
     p.axis.major_tick_line_color = black
     p.axis.minor_tick_line_color = black
@@ -546,36 +493,39 @@ def plot_price_km_v1(result, MODELO):
     p.yaxis.axis_label_text_color = black
     p.grid.grid_line_color = gray
     p.grid.grid_line_alpha = 0.4
-
     p.xaxis.axis_label = 'Kilómetros Recorridos (km)'
     p.yaxis.axis_label = 'Precio (€)'
     p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 
-    r_y = None
+    r_y_norm = r_y_chol = r_y_caro = None
     if len(data_with_year['km']) > 0:
         y_low = float(np.min(data_with_year['year']))
         y_high = float(np.max(data_with_year['year']))
         mapper = linear_cmap(field_name='year', palette=list(reversed(Blues256)), low=y_low, high=y_high)
         filt_y = BooleanFilter(booleans=[True]*len(data_with_year['km']))
-        # Vistas por etiqueta para colorear relleno/borde según chollo/caro/normal
+
         mask_tag_normal = [t == 'normal' for t in data_with_year['tag']]
         mask_tag_chollo = [t == 'chollo' for t in data_with_year['tag']]
         mask_tag_caro = [t == 'caro' for t in data_with_year['tag']]
         filt_tag_normal = BooleanFilter(booleans=mask_tag_normal)
         filt_tag_chollo = BooleanFilter(booleans=mask_tag_chollo)
         filt_tag_caro = BooleanFilter(booleans=mask_tag_caro)
+
         view_norm = CDSView(source=source_y, filters=[filt_y, filt_tag_normal])
         view_chol = CDSView(source=source_y, filters=[filt_y, filt_tag_chollo])
         view_caro = CDSView(source=source_y, filters=[filt_y, filt_tag_caro])
+
         r_y_norm = p.circle('km', 'precio', size=10, color=mapper, line_color=dark_blue, line_width=1.5, alpha=0.95, source=source_y, view=view_norm)
         r_y_chol = p.circle('km', 'precio', size=10, fill_color=green, line_color='#006400', line_width=1.8, alpha=0.95, source=source_y, view=view_chol, legend_label='Chollo')
         r_y_caro = p.circle('km', 'precio', size=10, fill_color=red, line_color='#800000', line_width=1.8, alpha=0.95, source=source_y, view=view_caro, legend_label='Timo')
+
         p.legend.location = 'top_right'
         p.legend.background_fill_color = 'white'
         p.legend.background_fill_alpha = 0.8
         p.legend.label_text_color = black
         p.legend.border_line_color = black
         p.legend.border_line_alpha = 0.3
+
         cbar = ColorBar(color_mapper=mapper['transform'], title='Año', label_standoff=8)
         p.add_layout(cbar, 'right')
 
@@ -584,7 +534,6 @@ def plot_price_km_v1(result, MODELO):
         r_n = p.circle('km', 'precio', size=9, color=black, line_color=dark_blue, line_width=1.5, alpha=0.8, source=source_n)
 
     if fit_x is not None and fit_y is not None:
-        # Banda de dispersión (gris tenue) alrededor de la curva de ajuste
         try:
             y_fit_pts = exp_func(kms_arr, *popt)
             resid = precios_arr - y_fit_pts
@@ -612,17 +561,20 @@ def plot_price_km_v1(result, MODELO):
     tap.callback = OpenURL(url='@url')
 
     if eq_text:
-        label = Label(x=10, y=p.height - 10, x_units='screen', y_units='screen', text=eq_text,
-                      text_color=black, text_font='courier', text_font_size='10pt',
+        label = Label(x=10, y=p.height - 10, x_units='screen', y_units='screen',
+                      text=eq_text, text_color=black, text_font='courier', text_font_size='10pt',
                       background_fill_color=white, background_fill_alpha=0.8)
         p.add_layout(label)
 
     controls = []
-    if r_y_norm is not None or r_y_chol is not None or r_y_caro is not None:
+    if 'year' in data_with_year and len(data_with_year['year']) > 0:
         years_unique = sorted({int(y) for y in data_with_year['year'] if y is not None})
-        sel_year = Select(title='Filtrar por año', value='Todos', options=(['Todos'] + [str(y) for y in years_unique] + (['Sin año'] if r_n is not None else [])))
-        cb_year = CustomJS(args=dict(sel=sel_year, src_y=source_y, filt_y=filt_y, r_n=r_n, r_y_norm=r_y_norm, r_y_chol=r_y_chol, r_y_caro=r_y_caro), code="""
+        sel_year = Select(title='Filtrar por año', value='Todos',
+                          options=(['Todos'] + [str(y) for y in years_unique] + (['Sin año'] if r_n is not None else [])))
+        cb_year = CustomJS(args=dict(sel=sel_year, src_y=source_y, filt_y=filt_y if len(data_with_year['km'])>0 else None,
+                                     r_n=r_n, r_y_norm=r_y_norm, r_y_chol=r_y_chol, r_y_caro=r_y_caro), code="""
 const val = sel.value;
+if (!src_y || !src_y.data || !src_y.data['year']) return;
 const years = src_y.data['year'];
 const n = years.length;
 let arr = new Array(n).fill(true);
@@ -646,8 +598,10 @@ if (val === 'Todos') {
   if (r_y_caro) r_y_caro.visible = true;
   if (r_n) r_n.visible = false;
 }
-filt_y.booleans = arr;
-filt_y.change.emit();
+if (filt_y) {
+  filt_y.booleans = arr;
+  filt_y.change.emit();
+}
 """)
         sel_year.js_on_change('value', cb_year)
         controls.append(sel_year)
@@ -656,5 +610,8 @@ filt_y.change.emit();
         show(column(*controls, p))
     else:
         show(p)
+
+
+
 
 
