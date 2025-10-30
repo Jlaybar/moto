@@ -35,7 +35,7 @@ def list_json_flies(PATH_ROW, recursivo: bool = False) -> List[Path]:
     return [p for p in sorted(base.glob(patron)) if p.is_file()]
 
 
-def read_json_files(rutas: List[str | Path], estricto: bool = True) -> List[Any]:
+def read_json_files(rutas: List[str | Path], estricto: bool = False) -> List[Any]:
     """Carga todos los files_json `.json` de un conjunto de rutas.
 
     Lee cada archivo `.json` provisto en `rutas` y devuelve una lista con
@@ -63,13 +63,29 @@ def read_json_files(rutas: List[str | Path], estricto: bool = True) -> List[Any]
             continue
         try:
             with ruta.open("r", encoding="utf-8") as f:
-                datos = json.load(f)
+                contenido = f.read()
+            # Manejo explícito de archivos vacíos o con solo espacios
+            if contenido.strip() == "":
+                if estricto:
+                    raise ValueError(f"JSON inválido en {ruta}: archivo vacío")
+                else:
+                    # En modo no estricto, omitimos files_json vacíos
+                    print(f"Error: JSON vacío en {ruta}. Se omite.")
+                    continue
+            datos = json.loads(contenido)
             resultados.append(datos)
         except json.JSONDecodeError as e:
             if estricto:
                 raise ValueError(f"JSON invǭlido en {ruta}: {e}") from e
-            # En modo no estricto, omitimos files_json con error
+            if not estricto:
+                # En modo no estricto, informamos y omitimos archivos inválidos
+                print(f"Error: JSON inválido en {ruta}. Se omite. Detalle: {e}")
+                continue
     return resultados
+
+def read_json_files_(rutas: List[str | Path]) -> List[Any]:
+    """Alias no estricto: omite archivos vacíos/invalidos e informa por consola."""
+    return read_json_files(rutas, estricto=False)
 
 def get_html_from_json(
     datos_json: Any,
@@ -257,8 +273,13 @@ def get_parse_item(extrae_items: Union[str, List[str]], extrac_list: List[str] =
 
     return resultados
 
-def get_items_json (PATH_ROW) -> List[Any]:
+
+def get_items_json (marca, modelo) -> int:
+
     """Ejecución ad-hoc: carga JSON por rutas y extrae `items`."""
+
+    PATH_ROW = f"data/{marca}/{modelo}"
+
     p = Path(PATH_ROW)
     files_json = []
     if p.is_file() or p.suffix.lower() == '.json':
@@ -275,22 +296,66 @@ def get_items_json (PATH_ROW) -> List[Any]:
             print('Ruta no valida')
             return []
 
-    print(f"Cargados {len(files_json)} archivo(s) JSON")
+    print(f"✅Cargados {len(files_json)} archivo(s) JSON")
 
-    content_json= read_json_files(files_json)
-    print(f"Extaidos {len(content_json)} contenidos JSON")
+    content_json= read_json_files(files_json, estricto=False)
+    print(f"✅Extaidos {len(content_json)} contenidos JSON")
 
     content_html = get_html_from_json(content_json)
-    print(f"Extaidos {len(content_html)} contenidos HTML")
+    print(f"✅Extaidos {len(content_html)} contenidos HTML")
 
     content_items = get_txt_between_from_html(content_html)
-    print(f"Extaidos  {len(content_items)} contenidos ITMEMS")
+    print(f"✅Extaidos  {len(content_items)} contenidos ITMEMS")
 
     items_json = get_parse_item(content_items , extrac_list=EXTRACT_LIST)
 
-    print(f"Extaidos  {len(items_json)} contenidos ITMEMS")
+    print(f"✅Extaidos  {len(items_json)} contenidos ITMEMS")
 
     return items_json
+
+
+
+def get_num_pages (marca, modelo) -> int:
+
+    PATH_ROW = f"data/{marca}/{modelo}"
+
+    print("Path:", repr(PATH_ROW))
+    p = Path(PATH_ROW)
+    files_json = []
+    if p.is_file() or p.suffix.lower() == '.json':
+        if p.suffix.lower() != '.json':
+            p = p.with_suffix('.json')
+        files_json = [p]
+    elif p.is_dir():
+        files_json = list_json_flies(p, recursivo=False)
+    else:
+        candidate = p.with_suffix('.json')
+        if candidate.exists():
+            files_json = [candidate]
+        else:
+            print('Ruta no valida')
+        
+    content_json= read_json_files_(files_json)
+    print(f"Extaidos {len(content_json)} contenidos JSON")
+    content_html = get_html_from_json(content_json)[0]
+    print(f"Extaidos {len(content_html)} contenidos HTML")
+
+    content_pages = get_txt_between_from_html(
+        content_html,
+        ini_text=',"totalPages":',
+        fin_text= ',"totalResults":'
+    )[0]
+
+    print("Texto extraído:", repr(content_pages))
+
+    # Extrae el número de forma segura
+    import re
+    match = re.search(r'\d+', content_pages)
+    pages = int(match.group()) if match else None
+
+    print("Páginas:", pages)
+
+    return pages
 
 
 #if __name__ == "__main__":
