@@ -21,13 +21,13 @@ from db_sqlite3_api  import db_read_dict
 
 def plot_price_km_by_year_json(result,marca,modelo):
     """
-    Grafica interactiva (Bokeh) Precio vs KilÃƒÂ³metros para un modelo.
+    Grafica interactiva (Bokeh) Precio vs Kilometros para un modelo.
     - Fondo blanco, textos/etiquetas en negro; grid gris suave.
-    - Puntos rellenos en degradado azul por aÃƒÂ±o (mÃƒÂ¡s oscuro = mÃƒÂ¡s antiguo).
+    - Puntos rellenos en degradado azul por anno (mas oscuro = mas antiguo).
     - Borde azul oscuro; verde/rojo si es chollo/caro.
-    - Barra de color AÃƒÂ±o.
-    - Selector: AÃƒÂ±o (filtra).
-    - Hover: Precio, Km, AÃƒÂ±o, URL; Tap: abre URL.
+    - Barra de color anno.
+    - Selector: anno (filtra).
+    - Hover: Precio, Km, anno, URL; Tap: abre URL.
     """
     import math, re
     # Mapa provinciaId -> nombre
@@ -83,7 +83,7 @@ def plot_price_km_by_year_json(result,marca,modelo):
         prov_names.append(prov_name)
 
     if len(kms) == 0:
-        print('Sin datos vÃƒÂ¡lidos para graficar')
+        print('Sin datos validos para graficar')
         return
 
     # === Ordenar por km para lÃƒÂ­nea de ajuste (sin cambios) ===
@@ -107,7 +107,7 @@ def plot_price_km_by_year_json(result,marca,modelo):
             x_line = np.linspace(float(kms_arr.min()) - 100, float(kms_arr.max()) + 100, 200)
             fit_x = x_line
             fit_y = exp_func(x_line, *popt)
-            eq_text = f'y = {popt[0]:.0f}Ã‚Â·e^({popt[1]:.7f}Ã‚Â·x) + {popt[2]:.0f}'
+            eq_text = f'y = {popt[0]:.0f}A·e^({popt[1]:.7f}A·x) + {popt[2]:.0f}'
         except Exception as e:
             eq_text = f'Ajuste no disponible: {e}'
     else:
@@ -144,7 +144,7 @@ def plot_price_km_by_year_json(result,marca,modelo):
         tags = []
         for rr, zz, yv in zip(residuals, z_scores, yrs_num):
             if np.isnan(yv):
-                tags.append('sin_aÃƒÂ±o')
+                tags.append('sin_anno')
             elif (zz <= -1.5) and (rr <= -1000):
                 tags.append('chollo')
             elif (zz >= 1.5) and (rr >= 1000):
@@ -154,12 +154,12 @@ def plot_price_km_by_year_json(result,marca,modelo):
     else:
         residuals = np.zeros_like(precios_arr, dtype=float)
         z_scores = np.zeros_like(precios_arr, dtype=float)
-        tags = ['sin_aÃƒÂ±o' if (y is None) else 'normal' for y in years_arr]
+        tags = ['sin_anno' if (y is None) else 'normal' for y in years_arr]
 
     # === ConstrucciÃƒÂ³n de fuentes (igual) ===
     mask_year = np.array([y is not None for y in years_arr])
 
-    def _fmt_eur(v): return f'{v:,.0f}Ã¢â€šÂ¬'.replace(',', '.')
+    def _fmt_eur(v): return f'{v:,.0f}eur'.replace(',', '.')
     def _fmt_km(v): return f'{v:,.0f} km'.replace(',', '.')
 
     dark_blue = '#003366'
@@ -209,7 +209,7 @@ def plot_price_km_by_year_json(result,marca,modelo):
     # === TÃƒÂ­tulos (igual) ===
     p = figure(width=900, height=600, background_fill_color=white, toolbar_location='above')
     p.title = None
-    p.add_layout(Title(text='RelaciÃƒÂ³n Precio vs KilÃƒÂ³metros', text_font_size='16pt', text_color=black), 'above')
+    p.add_layout(Title(text='Relacion Precio vs Kilometros', text_font_size='16pt', text_color=black), 'above')
     p.add_layout(Title(text=marca+":"+modelo, text_font_style='bold', text_font_size='20pt', text_color=bright_blue), 'above')
 
     # === EstÃƒÂ©tica (igual) ===
@@ -222,8 +222,8 @@ def plot_price_km_by_year_json(result,marca,modelo):
     p.yaxis.axis_label_text_color = black
     p.grid.grid_line_color = gray
     p.grid.grid_line_alpha = 0.4
-    p.xaxis.axis_label = 'KilÃƒÂ³metros Recorridos (km)'
-    p.yaxis.axis_label = 'Precio (Ã¢â€šÂ¬)'
+    p.xaxis.axis_label = 'Kilometros Recorridos (km)'
+    p.yaxis.axis_label = 'Precio (eur)'
     p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 
     r_y_norm = r_y_chol = r_y_caro = None
@@ -255,7 +255,7 @@ def plot_price_km_by_year_json(result,marca,modelo):
         p.legend.border_line_color = black
         p.legend.border_line_alpha = 0.3
 
-        cbar = ColorBar(color_mapper=mapper['transform'], title='AÃƒÂ±o', label_standoff=8)
+        cbar = ColorBar(color_mapper=mapper['transform'], title='anno', label_standoff=8)
         p.add_layout(cbar, 'right')
 
     r_n = None
@@ -279,8 +279,8 @@ def plot_price_km_by_year_json(result,marca,modelo):
 
     renderers_for_hover = [r for r in (r_y_norm, r_y_chol, r_y_caro, r_n) if r is not None]
     hover = HoverTool(renderers=renderers_for_hover, tooltips=[
-        ('AÃƒÂ±o', '@year_fmt'),
-        ('KilÃƒÂ³metros', '@km_fmt'),
+        ('anno', '@year_fmt'),
+        ('Kilometros', '@km_fmt'),
         ('Precio', '@precio_fmt'),
         ('URL', '@url')
     ])
@@ -302,8 +302,8 @@ def plot_price_km_by_year_json(result,marca,modelo):
     controls = []
     if 'year' in data_with_year and len(data_with_year['year']) > 0:
         years_unique = sorted({int(y) for y in data_with_year['year'] if y is not None})
-        sel_year = Select(title='Filtrar por aÃƒÂ±o', value='Todos',
-                          options=(['Todos'] + [str(y) for y in years_unique] + (['Sin aÃƒÂ±o'] if r_n is not None else [])))
+        sel_year = Select(title='Filtrar por anno', value='Todos',
+                          options=(['Todos'] + [str(y) for y in years_unique] + (['Sin anno'] if r_n is not None else [])))
         cb_year = CustomJS(args=dict(sel=sel_year, src_y=source_y, filt_y=filt_y if len(data_with_year['km'])>0 else None,
                                      r_n=r_n, r_y_norm=r_y_norm, r_y_chol=r_y_chol, r_y_caro=r_y_caro), code="""
 const val = sel.value;
@@ -317,7 +317,7 @@ if (val === 'Todos') {
   if (r_y_chol) r_y_chol.visible = true;
   if (r_y_caro) r_y_caro.visible = true;
   if (r_n) r_n.visible = true;
-} else if (val === 'Sin aÃƒÂ±o' || val === 'Sin a\u00f1o') {
+} else if (val === 'Sin anno' || val === 'Sin a\u00f1o') {
   arr = Array(n).fill(false);
   if (r_y_norm) r_y_norm.visible = false;
   if (r_y_chol) r_y_chol.visible = false;
@@ -351,7 +351,7 @@ def plot_price_km_by_province_json(result, marca, modelo):
     Grafica interactiva Precio vs Km coloreando por provincia (paleta pastel).
     - Colorea por provincia sÃƒÂ³lo si hay 3+ anuncios por provincia; resto en gris.
     - Leyenda con provincias presentes (y categorÃƒÂ­as Chollo/Timo).
-    - Mantiene selector por aÃƒÂ±o y hover con Provincia.
+    - Mantiene selector por anno y hover con Provincia.
     """
     import math
     try:
@@ -399,7 +399,7 @@ def plot_price_km_by_province_json(result, marca, modelo):
         prov_names.append(dict_prov.get(prov_int, (str(prov_raw) if prov_raw is not None else '-')))
 
     if len(kms) == 0:
-        print('Sin datos vÃƒÂ¡lidos para graficar')
+        print('Sin datos validos para graficar')
         return
 
     order = np.argsort(kms)
@@ -420,7 +420,7 @@ def plot_price_km_by_province_json(result, marca, modelo):
             x_line = np.linspace(float(kms_arr.min()) - 100, float(kms_arr.max()) + 100, 200)
             fit_x = x_line
             fit_y = exp_func(x_line, *popt)
-            eq_text = f'y = {popt[0]:.0f}Ã‚Â·e^({popt[1]:.7f}Ã‚Â·x) + {popt[2]:.0f}'
+            eq_text = f'y = {popt[0]:.0f}A·e^({popt[1]:.7f}A·x) + {popt[2]:.0f}'
         except Exception as e:
             eq_text = f'Ajuste no disponible: {e}'
     else:
@@ -456,7 +456,7 @@ def plot_price_km_by_province_json(result, marca, modelo):
         tags = []
         for rr, zz, yv in zip(residuals, z_scores, yrs_num):
             if np.isnan(yv):
-                tags.append('sin_aÃƒÂ±o')
+                tags.append('sin_anno')
             elif (zz <= -1.5) and (rr <= -1000):
                 tags.append('chollo')
             elif (zz >= 1.5) and (rr >= 1000):
@@ -466,11 +466,11 @@ def plot_price_km_by_province_json(result, marca, modelo):
     else:
         residuals = np.zeros_like(precios_arr, dtype=float)
         z_scores = np.zeros_like(precios_arr, dtype=float)
-        tags = ['sin_aÃƒÂ±o' if (y is None) else 'normal' for y in years_arr]
+        tags = ['sin_anno' if (y is None) else 'normal' for y in years_arr]
 
     mask_year = np.array([y is not None for y in years_arr])
 
-    def _fmt_eur(v): return f'{v:,.0f}Ã¢â€šÂ¬'.replace(',', '.')
+    def _fmt_eur(v): return f'{v:,.0f}eur'.replace(',', '.')
     def _fmt_km(v): return f'{v:,.0f} km'.replace(',', '.')
 
     dark_blue = '#003366'
@@ -539,7 +539,7 @@ def plot_price_km_by_province_json(result, marca, modelo):
 
     p = figure(width=900, height=600, background_fill_color=white, toolbar_location='above')
     p.title = None
-    p.add_layout(Title(text='RelaciÃƒÂ³n Precio vs KilÃƒÂ³metros', text_font_size='16pt', text_color=black), 'above')
+    p.add_layout(Title(text='Relacion Precio vs Kilometros', text_font_size='16pt', text_color=black), 'above')
     p.add_layout(Title(text=marca+":"+modelo, text_font_style='bold', text_font_size='20pt', text_color=bright_blue), 'above')
 
     p.min_border_top = 90
@@ -551,8 +551,8 @@ def plot_price_km_by_province_json(result, marca, modelo):
     p.yaxis.axis_label_text_color = black
     p.grid.grid_line_color = gray
     p.grid.grid_line_alpha = 0.4
-    p.xaxis.axis_label = 'KilÃƒÂ³metros Recorridos (km)'
-    p.yaxis.axis_label = 'Precio (Ã¢â€šÂ¬)'
+    p.xaxis.axis_label = 'Kilometros Recorridos (km)'
+    p.yaxis.axis_label = 'Precio (eur)'
     p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 
     r_y_norm = r_y_chol = r_y_caro = None
@@ -578,11 +578,11 @@ def plot_price_km_by_province_json(result, marca, modelo):
                             alpha=0.95, source=source_y, view=view_caro, legend_label='Timo')
 
         # DespuÃƒÂ©s: provincias ordenadas por nÃƒÂºmero de registros (desc) y sin '0' ni 'Otros'
-        # Construir mÃƒÂ¡scara de provincias por cada factor
+        # Construir mascara de provincias por cada factor
         factors_sorted = sorted([p for p in factors if str(p) != '0'], key=lambda p: count_map.get(p, 0), reverse=True)
         for prov in factors_sorted:
             label = f"{prov} ({count_map.get(prov, 0)})"
-            # mÃƒÂ¡scara por provincia restringida a entries con year (source_y)
+            # mascara por provincia restringida a entries con year (source_y)
             prov_mask_full = [str(pg) == str(prov) for pg in prov_group_arr]
             prov_mask_with_year = [v for (v, m) in zip(prov_mask_full, mask_year) if m]
             filt_prov = BooleanFilter(booleans=prov_mask_with_year)
@@ -597,14 +597,10 @@ def plot_price_km_by_province_json(result, marca, modelo):
         p.legend.label_text_color = black
         p.legend.border_line_color = black
         p.legend.border_line_alpha = 0.3
-        try:
-            p.legend.title = 'Provincia (Ã¢â€°Â¥3)'
-        except Exception:
-            pass
-
+  
     r_n = None
     if len(data_no_year['km']) > 0:
-        # Excluir 'Otros' tambiÃƒÂ©n en puntos sin aÃƒÂ±o
+        # Excluir 'Otros' tambiÃƒÂ©n en puntos sin anno
         prov_valid_no_year = [str(pg) != 'Otros' for pg in data_no_year.get('prov_group', [])]
         if prov_valid_no_year:
             view_n = CDSView(source=source_n, filters=[BooleanFilter(booleans=prov_valid_no_year)])
@@ -627,7 +623,7 @@ def plot_price_km_by_province_json(result, marca, modelo):
 
     renderers_for_hover = [r for r in ([r_y_chol, r_y_caro] + province_renderers + ([r_n] if 'r_n' in locals() else [])) if r is not None]
     hover = HoverTool(renderers=renderers_for_hover, tooltips=[
-        ('AÃƒÂ±o', '@year_fmt'),
+        ('anno', '@year_fmt'),
         ('Km', '@km_fmt'),
         ('Precio', '@precio_fmt'),
         ('Provincia', '@prov'),
@@ -647,8 +643,8 @@ def plot_price_km_by_province_json(result, marca, modelo):
     controls = []
     if 'year' in data_with_year and len(data_with_year['year']) > 0:
         years_unique = sorted({int(y) for y in data_with_year['year'] if y is not None})
-        sel_year = Select(title='Filtrar por aÃƒÂ±o', value='Todos',
-                          options=(['Todos'] + [str(y) for y in years_unique] + (['Sin aÃƒÂ±o'] if r_n is not None else [])))
+        sel_year = Select(title='Filtrar por anno', value='Todos',
+                          options=(['Todos'] + [str(y) for y in years_unique] + (['Sin anno'] if r_n is not None else [])))
         cb_year = CustomJS(args=dict(sel=sel_year, src_y=source_y, filt_y=filt_y if len(data_with_year['km'])>0 else None,
                                      r_n=r_n, r_y_norm=r_y_norm, r_y_chol=r_y_chol, r_y_caro=r_y_caro), code="""
 const val = sel.value;
@@ -662,7 +658,7 @@ if (val === 'Todos') {
   if (r_y_chol) r_y_chol.visible = true;
   if (r_y_caro) r_y_caro.visible = true;
   if (r_n) r_n.visible = true;
-} else if (val === 'Sin aÃƒÂ±o' || val === 'Sin a\u00f1o') {
+} else if (val === 'Sin anno' || val === 'Sin a\u00f1o') {
   arr = Array(n).fill(false);
   if (r_y_norm) r_y_norm.visible = false;
   if (r_y_chol) r_y_chol.visible = false;
@@ -701,7 +697,7 @@ if (filt_y) {
 
 def plot_price_km_db(marca,modelo):
     """
-    Grafica interactiva (Bokeh) Precio vs KilÃƒÂ³metros para un modelo.
+    Grafica interactiva (Bokeh) Precio vs Kilometros para un modelo.
     Lee una lista de dicts con claves: id, url, title, km, price, year, imgUrl, provinceId.
     Mantiene el diseÃƒÂ±o/estilo original.
     """
@@ -746,7 +742,7 @@ def plot_price_km_db(marca,modelo):
         years.append(year_val)
 
     if len(kms) == 0:
-        print('Sin datos vÃƒÂ¡lidos para graficar')
+        print('Sin datos validos para graficar')
         return
 
     # === Ordenar por km para lÃƒÂ­nea de ajuste (sin cambios) ===
@@ -768,7 +764,7 @@ def plot_price_km_db(marca,modelo):
             x_line = np.linspace(float(kms_arr.min()) - 100, float(kms_arr.max()) + 100, 200)
             fit_x = x_line
             fit_y = exp_func(x_line, *popt)
-            eq_text = f'y = {popt[0]:.0f}Ã‚Â·e^({popt[1]:.7f}Ã‚Â·x) + {popt[2]:.0f}'
+            eq_text = f'y = {popt[0]:.0f}A·e^({popt[1]:.7f}A·x) + {popt[2]:.0f}'
         except Exception as e:
             eq_text = f'Ajuste no disponible: {e}'
     else:
@@ -805,7 +801,7 @@ def plot_price_km_db(marca,modelo):
         tags = []
         for rr, zz, yv in zip(residuals, z_scores, yrs_num):
             if np.isnan(yv):
-                tags.append('sin_aÃƒÂ±o')
+                tags.append('sin_anno')
             elif (zz <= -1.5) and (rr <= -1000):
                 tags.append('chollo')
             elif (zz >= 1.5) and (rr >= 1000):
@@ -815,12 +811,12 @@ def plot_price_km_db(marca,modelo):
     else:
         residuals = np.zeros_like(precios_arr, dtype=float)
         z_scores = np.zeros_like(precios_arr, dtype=float)
-        tags = ['sin_aÃƒÂ±o' if (y is None) else 'normal' for y in years_arr]
+        tags = ['sin_anno' if (y is None) else 'normal' for y in years_arr]
 
     # === ConstrucciÃƒÂ³n de fuentes (igual) ===
     mask_year = np.array([y is not None for y in years_arr])
 
-    def _fmt_eur(v): return f'{v:,.0f}Ã¢â€šÂ¬'.replace(',', '.')
+    def _fmt_eur(v): return f'{v:,.0f}eur'.replace(',', '.')
     def _fmt_km(v): return f'{v:,.0f} km'.replace(',', '.')
 
     dark_blue = '#003366'
@@ -868,7 +864,7 @@ def plot_price_km_db(marca,modelo):
     # === TÃƒÂ­tulos (igual) ===
     p = figure(width=900, height=600, background_fill_color=white, toolbar_location='above')
     p.title = None
-    p.add_layout(Title(text='RelaciÃƒÂ³n Precio vs KilÃƒÂ³metros', text_font_size='16pt', text_color=black), 'above')
+    p.add_layout(Title(text='Relacion Precio vs Kilometros', text_font_size='16pt', text_color=black), 'above')
     p.add_layout(Title(text=modelo, text_font_style='bold', text_font_size='20pt', text_color=bright_blue), 'above')
 
     # === EstÃƒÂ©tica (igual) ===
@@ -881,8 +877,8 @@ def plot_price_km_db(marca,modelo):
     p.yaxis.axis_label_text_color = black
     p.grid.grid_line_color = gray
     p.grid.grid_line_alpha = 0.4
-    p.xaxis.axis_label = 'KilÃƒÂ³metros Recorridos (km)'
-    p.yaxis.axis_label = 'Precio (Ã¢â€šÂ¬)'
+    p.xaxis.axis_label = 'Kilometros Recorridos (km)'
+    p.yaxis.axis_label = 'Precio (eur)'
     p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 
     r_y_norm = r_y_chol = r_y_caro = None
@@ -914,7 +910,7 @@ def plot_price_km_db(marca,modelo):
         p.legend.border_line_color = black
         p.legend.border_line_alpha = 0.3
 
-        cbar = ColorBar(color_mapper=mapper['transform'], title='AÃƒÂ±o', label_standoff=8)
+        cbar = ColorBar(color_mapper=mapper['transform'], title='anno', label_standoff=8)
         p.add_layout(cbar, 'right')
 
     r_n = None
@@ -939,8 +935,8 @@ def plot_price_km_db(marca,modelo):
     renderers_for_hover = [r for r in (r_y_norm, r_y_chol, r_y_caro, r_n) if r is not None]
     hover = HoverTool(renderers=renderers_for_hover, tooltips=[
         ('Precio', '@precio_fmt'),
-        ('KilÃƒÂ³metros', '@km_fmt'),
-        ('AÃƒÂ±o', '@year_fmt'),
+        ('Kilometros', '@km_fmt'),
+        ('anno', '@year_fmt'),
         ('URL', '@url')
     ])
     p.add_tools(hover)
@@ -957,8 +953,8 @@ def plot_price_km_db(marca,modelo):
     controls = []
     if 'year' in data_with_year and len(data_with_year['year']) > 0:
         years_unique = sorted({int(y) for y in data_with_year['year'] if y is not None})
-        sel_year = Select(title='Filtrar por aÃƒÂ±o', value='Todos',
-                          options=(['Todos'] + [str(y) for y in years_unique] + (['Sin aÃƒÂ±o'] if r_n is not None else [])))
+        sel_year = Select(title='Filtrar por anno', value='Todos',
+                          options=(['Todos'] + [str(y) for y in years_unique] + (['Sin anno'] if r_n is not None else [])))
         cb_year = CustomJS(args=dict(sel=sel_year, src_y=source_y, filt_y=filt_y if len(data_with_year['km'])>0 else None,
                                      r_n=r_n, r_y_norm=r_y_norm, r_y_chol=r_y_chol, r_y_caro=r_y_caro), code="""
 const val = sel.value;
@@ -972,7 +968,7 @@ if (val === 'Todos') {
   if (r_y_chol) r_y_chol.visible = true;
   if (r_y_caro) r_y_caro.visible = true;
   if (r_n) r_n.visible = true;
-} else if (val === 'Sin aÃƒÂ±o' || val === 'Sin a\u00f1o') {
+} else if (val === 'Sin anno' || val === 'Sin a\u00f1o') {
   arr = Array(n).fill(false);
   if (r_y_norm) r_y_norm.visible = false;
   if (r_y_chol) r_y_chol.visible = false;
