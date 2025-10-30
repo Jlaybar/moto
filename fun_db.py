@@ -13,7 +13,7 @@ DDL = """
 CREATE TABLE IF NOT EXISTS data_moto (
     id          INTEGER PRIMARY KEY,
     url         TEXT    NOT NULL,
-    model       TEXT    NOT NULL,
+    title       TEXT    NOT NULL,
     km          REAL,
     price       INTEGER,
     year        INTEGER,
@@ -25,11 +25,11 @@ CREATE TABLE IF NOT EXISTS data_moto (
 """
 
 UPSERT_SQL = """
-INSERT INTO data_moto (id, url, model, km, price, year, imgUrl, provinceId, hp)
-VALUES (:id, :url, :model, :km, :price, :year, :imgUrl, :provinceId, :hp)
+INSERT INTO data_moto (id, url, title, km, price, year, imgUrl, provinceId, hp)
+VALUES (:id, :url, :title, :km, :price, :year, :imgUrl, :provinceId, :hp)
 ON CONFLICT(id) DO UPDATE SET
     url        = excluded.url,
-    model      = excluded.model,
+    title      = excluded.title,
     km         = excluded.km,
     price      = excluded.price,
     year       = excluded.year,
@@ -60,7 +60,7 @@ def _normalize_row(row: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "id":         _to_int_or_none(row.get("id")),
         "url":        (str(row.get("url") or "").strip()),
-        "model":      (str(row.get("model") or "").strip()),
+        "title":      (str(row.get("title") or "").strip()),
         "km":         _to_float_or_none(row.get("km")),
         "price":      _to_int_or_none(row.get("price")),
         "year":       _to_int_or_none(row.get("year")),
@@ -71,7 +71,7 @@ def _normalize_row(row: Dict[str, Any]) -> Dict[str, Any]:
 
 # --------------------------------------------------------------------------------------------
 def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> Dict[str, int]:
-    expected_cols = ["id","url","model","km","price","year","imgUrl","provinceId","hp"]
+    expected_cols = ["id","url","title","km","price","year","imgUrl","provinceId","hp"]
     if df.columns.duplicated().any():
         df = df.loc[:, ~df.columns.duplicated()].copy()
 
@@ -100,7 +100,7 @@ def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> D
 
     df["id"]         = df["id"].map(_to_str)
     df["url"]        = df["url"].map(_to_str)
-    df["model"]      = df["model"].map(_to_str)
+    df["title"]      = df["title"].map(_to_str)
     df["km"]         = df["km"].map(_to_int)
     df["price"]      = df["price"].map(_to_int)
     df["year"]       = df["year"].map(_to_int)
@@ -111,11 +111,11 @@ def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> D
     rows, skipped = [], 0
     for _, r in df.iterrows():
         d = r.to_dict()
-        if not d["id"] or not d["url"] or not d["model"]:
+        if not d["id"] or not d["url"] or not d["title"]:
             skipped += 1
             continue
         rows.append((
-            d["id"], d["url"], d["model"], d["km"], d["price"],
+            d["id"], d["url"], d["title"], d["km"], d["price"],
             d["year"], d["imgUrl"], d["provinceId"], d["hp"]
         ))
     if not rows:
@@ -126,7 +126,7 @@ def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> D
     CREATE TABLE IF NOT EXISTS data_moto (
         id          TEXT PRIMARY KEY,
         url         TEXT NOT NULL,
-        model       TEXT NOT NULL,
+        title       TEXT NOT NULL,
         km          INTEGER,
         price       INTEGER,
         year        INTEGER,
@@ -138,7 +138,7 @@ def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> D
     );
     """
 
-    base_cols = "(id, url, model, km, price, year, imgUrl, provinceId, hp)"
+    base_cols = "(id, url, title, km, price, year, imgUrl, provinceId, hp)"
 
     conn = sqlite3.connect(db_path)
     try:
@@ -178,14 +178,14 @@ def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> D
         cur.execute("CREATE INDEX IF NOT EXISTS idx_data_moto_prov  ON data_moto(provinceId);")
         # índice por expresión (puede no estar disponible en SQLite muy antiguo)
         try:
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_data_moto_model_ci ON data_moto(LOWER(model));")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_data_moto_title_ci ON data_moto(LOWER(title));")
         except sqlite3.OperationalError:
             pass  # omite si la versión no soporta índices por expresión
 
         # --- UPSERT dinámico: sólo toca updated_at si existe ---
         set_parts = [
             "url = excluded.url",
-            "model = excluded.model",
+            "title = excluded.title",
             "km = excluded.km",
             "price = excluded.price",
             "year = excluded.year",
