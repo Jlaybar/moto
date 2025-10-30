@@ -1,12 +1,53 @@
 # Initialize the ApifyClient with your API token
-from apify_client import ApifyClient
+
 import os
 import json
+from apify_client import ApifyClient
 
 
+def delete_json_file(marca, modelo, num_paginas):
+    import os
+    import json
 
-def fun_get_data (marca, modelo, num_paginas, exe=1):
+    json_path = os.path.join("data", str(marca), f"{modelo}.json")
+
+    if os.path.isfile(json_path):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Verifica que sea una lista y compara longitud con num_paginas
+            if isinstance(data, list) and len(data) == num_paginas or num_paginas == 1:
+                print(f"✅ El archivo {json_path} ya existe y contiene {len(data)} registros. No se borra.")
+            else:
+                print(f"⚠️ El archivo {json_path} existe pero contiene {len(data)} registros. Se borra.")
+                os.remove(json_path)
+
+        except json.JSONDecodeError:
+            print(f"⚠️ El archivo {json_path} no contiene un JSON válido. Se borra.")
+            os.remove(json_path)
+        except Exception as e:
+            print(f"⚠️ Error al procesar {json_path}: {e}")
+    else:
+        print(f"ℹ️ El archivo {json_path} no existe, nada que borrar.")
+
+    return
+
+
+def get_apify_data (marca, modelo, num_paginas=1,  exe=1):
     # Aquí puedes implementar cualquier lógica adicional si es necesario
+    # Comprobar si ya existe el archivo data/<marca>/<modelo>.json
+    json_path = os.path.join("data", str(marca), f"{modelo}.json")
+
+    if num_paginas==0:
+        delete_json_file(marca,modelo,num_paginas)
+        exe = 0  
+        print(f"⚠️ El archivo {json_path} No tiene datos.")  
+
+    if os.path.isfile(json_path):
+        exe = 0
+        print(f"✅ El archivo {json_path} ya existe. No se ejecutará el Actor.")
+
     APIFY_API_TOKEN = os.getenv('APIFY_API_TOKEN')
     client = ApifyClient(APIFY_API_TOKEN)
 
@@ -60,14 +101,14 @@ def fun_get_data (marca, modelo, num_paginas, exe=1):
         # Ahora 'result' contiene todos los elementos como objetos JSON
         print(f"Se guardaron {len(result)} elementos en la variable 'result'")
 
-        # Crear el directorio si no existe
-        ruta_directorio = f"data/raw/{marca}"
+        # Crear el directorio si no existe (data/<marca>)
+        ruta_directorio = f"data/{marca}"
         os.makedirs(ruta_directorio, exist_ok=True) 
         # Guardar en archivo JSON
         with open(f'data/{marca}/{modelo}.json', 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
 
-        print(f"Datos guardados en :data/{marca}/{modelo}.json ")
+        print(f"✅ Datos guardados en :data/{marca}/{modelo}.json ")
 
 
     return 
