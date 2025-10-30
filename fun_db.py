@@ -20,13 +20,15 @@ CREATE TABLE IF NOT EXISTS data_moto (
     imgUrl      TEXT,
     provinceId  INTEGER,
     hp          REAL,
+    marca       TEXT,
+    modelo      TEXT,
     UNIQUE (url)
 );
 """
 
 UPSERT_SQL = """
-INSERT INTO data_moto (id, url, title, km, price, year, imgUrl, provinceId, hp)
-VALUES (:id, :url, :title, :km, :price, :year, :imgUrl, :provinceId, :hp)
+INSERT INTO data_moto (id, url, title, km, price, year, imgUrl, provinceId, hp, marca, modelo)
+VALUES (:id, :url, :title, :km, :price, :year, :imgUrl, :provinceId, :hp, :marca, :modelo)
 ON CONFLICT(id) DO UPDATE SET
     url        = excluded.url,
     title      = excluded.title,
@@ -35,7 +37,9 @@ ON CONFLICT(id) DO UPDATE SET
     year       = excluded.year,
     imgUrl     = excluded.imgUrl,
     provinceId = excluded.provinceId,
-    hp         = excluded.hp;
+    hp         = excluded.hp,
+    marca      = excluded.marca,
+    modelo     = excluded.modelo;
 """
 
 def _is_nan(v: Any) -> bool:
@@ -55,23 +59,14 @@ def _to_int_or_none(v: Any):
     except Exception:
         return None
 
-def _normalize_row(row: Dict[str, Any]) -> Dict[str, Any]:
-    """Normaliza tipos y limpia valores nulos."""
-    return {
-        "id":         _to_int_or_none(row.get("id")),
-        "url":        (str(row.get("url") or "").strip()),
-        "title":      (str(row.get("title") or "").strip()),
-        "km":         _to_float_or_none(row.get("km")),
-        "price":      _to_int_or_none(row.get("price")),
-        "year":       _to_int_or_none(row.get("year")),
-        "imgUrl":     (str(row.get("imgUrl") or "").strip()),
-        "provinceId": _to_int_or_none(row.get("provinceId")) or 0,
-        "hp":         _to_float_or_none(row.get("hp")),
-    }
-
 # --------------------------------------------------------------------------------------------
-def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> Dict[str, int]:
-    expected_cols = ["id","url","title","km","price","year","imgUrl","provinceId","hp"]
+def insert_motos_from_json(items_json, marca: str, modelo: str, db_path: str=SQLITE_PATH) -> Dict[str, int]:
+
+    df = pd.DataFrame(items_json)
+    df["marca"] = marca
+    df["modelo"] = modelo
+
+    expected_cols = ["id","url","title","km","price","year","imgUrl","provinceId","hp","marca","modelo"]
     if df.columns.duplicated().any():
         df = df.loc[:, ~df.columns.duplicated()].copy()
 
@@ -107,6 +102,8 @@ def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> D
     df["imgUrl"]     = df["imgUrl"].map(_to_str)
     df["provinceId"] = df["provinceId"].map(_to_str)
     df["hp"]         = df["hp"].map(_to_float)
+    df["marca"]      = df["marca"].map(_to_str)
+    df["modelo"]     = df["modelo"].map(_to_str)
 
     rows, skipped = [], 0
     for _, r in df.iterrows():
@@ -116,29 +113,13 @@ def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> D
             continue
         rows.append((
             d["id"], d["url"], d["title"], d["km"], d["price"],
-            d["year"], d["imgUrl"], d["provinceId"], d["hp"]
+            d["year"], d["imgUrl"], d["provinceId"], d["hp"], d["marca"], d["modelo"]
         ))
     if not rows:
         return {"inserted": 0, "updated": 0, "skipped": skipped, "total": skipped}
 
     # DDL "nueva" por si la tabla no existe aún (incluye created_at/updated_at)
-    DDL = """
-    CREATE TABLE IF NOT EXISTS data_moto (
-        id          TEXT PRIMARY KEY,
-        url         TEXT NOT NULL,
-        title       TEXT NOT NULL,
-        km          INTEGER,
-        price       INTEGER,
-        year        INTEGER,
-        imgUrl      TEXT,
-        provinceId  TEXT,
-        hp          REAL,
-        created_at  TEXT,
-        updated_at  TEXT
-    );
-    """
-
-    base_cols = "(id, url, title, km, price, year, imgUrl, provinceId, hp)"
+    base_cols = "(id, url, title, km, price, year, imgUrl, provinceId, hp, marca, modelo)"
 
     conn = sqlite3.connect(db_path)
     try:
@@ -153,6 +134,15 @@ def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> D
         # --- Asegura columnas faltantes en tablas antiguas ---
         cur.execute("PRAGMA table_info(data_moto);")
         existing_cols = {row[1] for row in cur.fetchall()}
+
+        # Asegura columna 'marca' si falta en esquemas antiguos
+        if "marca" not in existing_cols:
+            cur.execute("ALTER TABLE data_moto ADD COLUMN marca TEXT;")
+            existing_cols.add("marca")
+        # Asegura columna 'modelo' si falta en esquemas antiguos
+        if "modelo" not in existing_cols:
+            cur.execute("ALTER TABLE data_moto ADD COLUMN modelo TEXT;")
+            existing_cols.add("modelo")
 
         # Añade columnas si faltan (compatibles con SQLite: sin DEFAULT de función)
         added_cols = []
@@ -192,13 +182,15 @@ def insert_motos_from_dataframe(df: pd.DataFrame, db_path: str=SQLITE_PATH) -> D
             "imgUrl = excluded.imgUrl",
             "provinceId = excluded.provinceId",
             "hp = excluded.hp",
+            "marca = excluded.marca",
+            "modelo = excluded.modelo",
         ]
         if "updated_at" in existing_cols:
             set_parts.append("updated_at = datetime('now')")
 
         UPSERT_SQL = f"""
         INSERT INTO data_moto {base_cols}
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             {", ".join(set_parts)};
         """
