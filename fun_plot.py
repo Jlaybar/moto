@@ -1,4 +1,4 @@
-﻿import numpy as np
+import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 
@@ -14,6 +14,10 @@ from bokeh.palettes import Blues256, Pastel1, Pastel2
 from bokeh.layouts import column
 
 from db_sqlite3_api  import db_read_dict
+
+import warnings
+warnings.filterwarnings("ignore", message=".*CDSView.source is no longer needed.*")
+warnings.filterwarnings("ignore", message=".*CDSView.filters was deprecated.*")
 
 
 
@@ -231,18 +235,14 @@ def plot_price_km_by_year_json(result,marca,modelo):
         y_low = float(np.min(data_with_year['year']))
         y_high = float(np.max(data_with_year['year']))
         mapper = linear_cmap(field_name='year', palette=list(reversed(Blues256)), low=y_low, high=y_high)
-        filt_y = BooleanFilter(booleans=[True]*len(data_with_year['km']))
+        # Filtros por etiqueta (se actualizarán por año vía JS). Bokeh 3: usar 'filter' único
+        filt_norm = BooleanFilter(booleans=[t == 'normal' for t in data_with_year['tag']])
+        filt_chol = BooleanFilter(booleans=[t == 'chollo' for t in data_with_year['tag']])
+        filt_caro = BooleanFilter(booleans=[t == 'caro' for t in data_with_year['tag']])
 
-        mask_tag_normal = [t == 'normal' for t in data_with_year['tag']]
-        mask_tag_chollo = [t == 'chollo' for t in data_with_year['tag']]
-        mask_tag_caro = [t == 'caro' for t in data_with_year['tag']]
-        filt_tag_normal = BooleanFilter(booleans=mask_tag_normal)
-        filt_tag_chollo = BooleanFilter(booleans=mask_tag_chollo)
-        filt_tag_caro = BooleanFilter(booleans=mask_tag_caro)
-
-        view_norm = CDSView(source=source_y, filters=[filt_y, filt_tag_normal])
-        view_chol = CDSView(source=source_y, filters=[filt_y, filt_tag_chollo])
-        view_caro = CDSView(source=source_y, filters=[filt_y, filt_tag_caro])
+        view_norm = CDSView(filter=filt_norm)
+        view_chol = CDSView(filter=filt_chol)
+        view_caro = CDSView(filter=filt_caro)
 
         r_y_norm = p.circle('km', 'precio', size=10, color=mapper, line_color=dark_blue, line_width=1.5, alpha=0.95, source=source_y, view=view_norm)
         r_y_chol = p.circle('km', 'precio', size=10, fill_color=green, line_color='#006400', line_width=1.8, alpha=0.95, source=source_y, view=view_chol, legend_label='Chollo')
@@ -304,37 +304,51 @@ def plot_price_km_by_year_json(result,marca,modelo):
         years_unique = sorted({int(y) for y in data_with_year['year'] if y is not None})
         sel_year = Select(title='Filtrar por anno', value='Todos',
                           options=(['Todos'] + [str(y) for y in years_unique] + (['Sin anno'] if r_n is not None else [])))
-        cb_year = CustomJS(args=dict(sel=sel_year, src_y=source_y, filt_y=filt_y if len(data_with_year['km'])>0 else None,
+        cb_year = CustomJS(args=dict(sel=sel_year, src_y=source_y,
+                                     filt_norm=filt_norm, filt_chol=filt_chol, filt_caro=filt_caro,
                                      r_n=r_n, r_y_norm=r_y_norm, r_y_chol=r_y_chol, r_y_caro=r_y_caro), code="""
 const val = sel.value;
 if (!src_y || !src_y.data || !src_y.data['year']) return;
 const years = src_y.data['year'];
+const tags = src_y.data['tag'];
 const n = years.length;
-let arr = new Array(n).fill(true);
+let arrN = new Array(n).fill(true);
+let arrCh = new Array(n).fill(true);
+let arrCa = new Array(n).fill(true);
 if (val === 'Todos') {
-  arr = Array(n).fill(true);
+  for (let i=0;i<n;i++) {
+    const t = tags[i];
+    arrN[i] = (t === 'normal');
+    arrCh[i] = (t === 'chollo');
+    arrCa[i] = (t === 'caro');
+  }
   if (r_y_norm) r_y_norm.visible = true;
   if (r_y_chol) r_y_chol.visible = true;
   if (r_y_caro) r_y_caro.visible = true;
   if (r_n) r_n.visible = true;
 } else if (val === 'Sin anno' || val === 'Sin a\u00f1o') {
-  arr = Array(n).fill(false);
+  arrN.fill(false); arrCh.fill(false); arrCa.fill(false);
   if (r_y_norm) r_y_norm.visible = false;
   if (r_y_chol) r_y_chol.visible = false;
   if (r_y_caro) r_y_caro.visible = false;
   if (r_n) r_n.visible = true;
 } else {
   const y = parseInt(val);
-  for (let i=0;i<n;i++) arr[i] = (parseInt(years[i]) === y);
+  for (let i=0;i<n;i++) {
+    const ok = (parseInt(years[i]) === y);
+    const t = tags[i];
+    arrN[i] = ok && (t === 'normal');
+    arrCh[i] = ok && (t === 'chollo');
+    arrCa[i] = ok && (t === 'caro');
+  }
   if (r_y_norm) r_y_norm.visible = true;
   if (r_y_chol) r_y_chol.visible = true;
   if (r_y_caro) r_y_caro.visible = true;
   if (r_n) r_n.visible = false;
 }
-if (filt_y) {
-  filt_y.booleans = arr;
-  filt_y.change.emit();
-}
+if (filt_norm) { filt_norm.booleans = arrN; filt_norm.change.emit(); }
+if (filt_chol) { filt_chol.booleans = arrCh; filt_chol.change.emit(); }
+if (filt_caro) { filt_caro.booleans = arrCa; filt_caro.change.emit(); }
 """)
         sel_year.js_on_change('value', cb_year)
         controls.append(sel_year)
@@ -570,8 +584,8 @@ def plot_price_km_by_province_json(result, marca, modelo):
         # Primero: Chollo y Timo en la leyenda (excluye 'Otros')
         prov_valid_with_year = [str(pg) != 'Otros' for pg in prov_group_arr[mask_year]]
         filt_prov_valid_y = BooleanFilter(booleans=prov_valid_with_year)
-        view_chol = CDSView(source=source_y, filters=[filt_y, filt_tag_chollo, filt_prov_valid_y])
-        view_caro = CDSView(source=source_y, filters=[filt_y, filt_tag_caro, filt_prov_valid_y])
+        view_chol = CDSView(filters=[filt_y, filt_tag_chollo, filt_prov_valid_y])
+        view_caro = CDSView(filters=[filt_y, filt_tag_caro, filt_prov_valid_y])
         r_y_chol = p.circle('km', 'precio', size=10, fill_color=green, line_color='#006400', line_width=1.8,
                             alpha=0.95, source=source_y, view=view_chol, legend_label='Chollo')
         r_y_caro = p.circle('km', 'precio', size=10, fill_color=red, line_color='#800000', line_width=1.8,
@@ -586,7 +600,7 @@ def plot_price_km_by_province_json(result, marca, modelo):
             prov_mask_full = [str(pg) == str(prov) for pg in prov_group_arr]
             prov_mask_with_year = [v for (v, m) in zip(prov_mask_full, mask_year) if m]
             filt_prov = BooleanFilter(booleans=prov_mask_with_year)
-            view_prov = CDSView(source=source_y, filters=[filt_y, filt_tag_normal, filt_prov])
+            view_prov = CDSView(filters=[filt_y, filt_tag_normal, filt_prov])
             r = p.circle('km', 'precio', size=10, fill_color=color_map.get(prov, default_gray), line_color=dark_blue, line_width=1.5,
                          alpha=0.95, source=source_y, view=view_prov, legend_label=label)
             province_renderers.append(r)
@@ -603,7 +617,7 @@ def plot_price_km_by_province_json(result, marca, modelo):
         # Excluir 'Otros' tambiÃƒÂ©n en puntos sin anno
         prov_valid_no_year = [str(pg) != 'Otros' for pg in data_no_year.get('prov_group', [])]
         if prov_valid_no_year:
-            view_n = CDSView(source=source_n, filters=[BooleanFilter(booleans=prov_valid_no_year)])
+            view_n = CDSView(filters=[BooleanFilter(booleans=prov_valid_no_year)])
             r_n = p.circle('km', 'precio', size=9, color=black, line_color=dark_blue, line_width=1.5, alpha=0.8, source=source_n, view=view_n)
 
     if fit_x is not None and fit_y is not None:
@@ -895,9 +909,9 @@ def plot_price_km_db(marca,modelo):
         filt_tag_chollo = BooleanFilter(booleans=mask_tag_chollo)
         filt_tag_caro = BooleanFilter(booleans=mask_tag_caro)
 
-        view_norm = CDSView(source=source_y, filters=[filt_y, filt_tag_normal])
-        view_chol = CDSView(source=source_y, filters=[filt_y, filt_tag_chollo])
-        view_caro = CDSView(source=source_y, filters=[filt_y, filt_tag_caro])
+        view_norm = CDSView(filters=[filt_y, filt_tag_normal])
+        view_chol = CDSView(filters=[filt_y, filt_tag_chollo])
+        view_caro = CDSView(filters=[filt_y, filt_tag_caro])
 
         r_y_norm = p.circle('km', 'precio', size=10, color=mapper, line_color=dark_blue, line_width=1.5, alpha=0.95, source=source_y, view=view_norm)
         r_y_chol = p.circle('km', 'precio', size=10, fill_color=green, line_color='#006400', line_width=1.8, alpha=0.95, source=source_y, view=view_chol, legend_label='Chollo')

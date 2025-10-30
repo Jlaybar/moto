@@ -6,7 +6,7 @@ Ejemplo de uso:
 """
 
 from typing import Dict
-from typing import Dict
+
 
 dict_prov: Dict[int, str] = {
     1: "Álava",
