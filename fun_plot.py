@@ -15,8 +15,6 @@ from bokeh.layouts import column
 
 from db_sqlite3_api  import db_read_dict
 
-output_notebook(INLINE)
-
 
 def plot_price_km_db(MODELO):
     """
@@ -25,6 +23,12 @@ def plot_price_km_db(MODELO):
     Mantiene el diseño/estilo original.
     """
     import math
+
+    # Asegura que BokehJS se cargue en el contexto del notebook
+    try:
+        output_notebook(INLINE)
+    except Exception:
+        pass
 
     # === Preparar DataFrame y filtrar por modelo (ahora usamos 'title') ===
     registros = db_read_dict(tabla='data_moto', 
@@ -326,6 +330,12 @@ def plot_price_km_json(result,MODELO):
     """
     import math, re
 
+    # Asegura que BokehJS se cargue en el contexto del notebook
+    try:
+        output_notebook(INLINE)
+    except Exception:
+        pass
+
     # Preparar DataFrame y filtrar por modelo
     df = pd.DataFrame(result)
     registros = df.to_dict(orient='records')
@@ -615,3 +625,4 @@ if (filt_y) {
 
 
 
+    

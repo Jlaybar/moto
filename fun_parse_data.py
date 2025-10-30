@@ -166,20 +166,23 @@ def get_txt_between_from_html(
         textos = [contenido_html['html']]
 
     resultados: List[str] = []
-    for contenido in textos:
+
+    for i in range(len(textos)-1):
+        contenido = textos[i]
         contenido = contenido.replace("\\", "")  
         ini = contenido.find(ini_text)
         if ini == -1:
-            return ""
+            print(f"❌ No se encuentra el inicio de la cadena en el archivo {i}")
         ini += len(ini_text)
         fin = contenido.find(fin_text, ini)
         if fin == -1:
-            return ""
+            print(f"❌ No se encuentra el fin de la cadena en el archivo {i}")
         cuerpo = contenido[ini:fin]
         fin_text= fin_text.replace(',\"totalPages\"', '')
         fragmento = f"{ini_text}{cuerpo}{fin_text}"
         resultados.append(fragmento)
     return resultados
+
 def _find_json_array_after_items(s: str) -> str:
     key = '"items":['
     start = s.find(key)
@@ -297,19 +300,34 @@ def get_items_json (marca, modelo) -> int:
             return []
 
     print(f"✅Cargados {len(files_json)} archivo(s) JSON")
-
+    #-------------------------------------------------------------------
     content_json= read_json_files(files_json, estricto=False)
-    print(f"✅Extaidos {len(content_json)} contenidos JSON")
 
+    if len(content_json)==0:
+        print(f"❌Extaidos {len(content_json)} contenidos JSON")
+    else:
+        print(f"✅Extaidos {len(content_json)} contenidos JSON")
+
+    #-------------------------------------------------------------------
     content_html = get_html_from_json(content_json)
-    print(f"✅Extaidos {len(content_html)} contenidos HTML")
-
+    if len(content_html)==0:
+        print(f"❌Extaidos {len(content_html)} contenidos HTML")
+    else :
+        print(f"✅Extaidos {len(content_html)} contenidos HTML")
+    #-------------------------------------------------------------------
     content_items = get_txt_between_from_html(content_html)
-    print(f"✅Extaidos  {len(content_items)} contenidos ITMEMS")
+    if len(content_items)==0:
+        print(f"❌Extaidos  {len(content_items)} contenidos ITEM")
+    else:
+        print(f"✅Extaidos  {len(content_items)} contenidos ITEM")
 
+    #-------------------------------------------------------------------
     items_json = get_parse_item(content_items , extrac_list=EXTRACT_LIST)
 
-    print(f"✅Extaidos  {len(items_json)} contenidos ITMEMS")
+    if len(items_json)==0:
+        print(f"❌Extaidos  {len(items_json)} contenidos PARSE")
+    else:
+        print(f"✅Extaidos  {len(items_json)} contenidos PARSE")
 
     return items_json
 
