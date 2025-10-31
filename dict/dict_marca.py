@@ -1,5 +1,3 @@
-from typing import Dict
-
 
 dict_marca = {
     "APRILIA": "aprilia",
