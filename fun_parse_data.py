@@ -7,10 +7,13 @@ Este módulo ofrece funciones para:
 
 from __future__ import annotations
 
+import os
 import json
 from typing import List, Union
 from pathlib import Path
 from typing import Any, Dict, List, Union
+from bs4 import BeautifulSoup
+
 
 
 BASE_URL = "https://motos.coches.net/"
@@ -81,6 +84,11 @@ def read_json_files(rutas: List[str | Path], estricto: bool = False) -> List[Any
                 # En modo no estricto, informamos y omitimos archivos inválidos
                 print(f"Error: JSON inválido en {ruta}. Se omite. Detalle: {e}")
                 continue
+
+    if len(resultados)==0:
+        print(f"❌Extaidos {len(resultados)} contenidos JSON")
+    else:
+        print(f"✅Extaidos {len(resultados)} contenidos JSON")
     return resultados
 
 def read_json_files_(rutas: List[str | Path]) -> List[Any]:
@@ -133,6 +141,10 @@ def get_html_from_json(
         # otros tipos se ignoran
 
     visitar(datos_json)
+    if len(resultados)==0:
+        print(f"❌Extaidos {len(resultados)} contenidos HTML")
+    else :
+        print(f"✅Extaidos {len(resultados)} contenidos HTML")
     return resultados
 
 
@@ -167,7 +179,7 @@ def get_txt_between_from_html(
 
     resultados: List[str] = []
 
-    for i in range(len(textos)-1):
+    for i in range(max(1, len(textos) - 1)):
         contenido = textos[i]
         contenido = contenido.replace("\\", "")  
         ini = contenido.find(ini_text)
@@ -181,6 +193,11 @@ def get_txt_between_from_html(
         fin_text= fin_text.replace(',\"totalPages\"', '')
         fragmento = f"{ini_text}{cuerpo}{fin_text}"
         resultados.append(fragmento)
+
+    if len(resultados)==0:
+        print(f"❌Extaidos  {len(resultados)} contenidos ITEM")
+    else:
+        print(f"✅Extaidos  {len(resultados)} contenidos ITEM")
     return resultados
 
 def _find_json_array_after_items(s: str) -> str:
@@ -274,6 +291,11 @@ def get_parse_item(extrae_items: Union[str, List[str]], extrac_list: List[str] =
 
             resultados.append(row)
 
+    if len(resultados)==0:
+        print(f"❌Extaidos  {len(resultados)} contenidos PARSE")
+    else:
+        print(f"✅Extaidos  {len(resultados)} contenidos PARSE")
+
     return resultados
 
 
@@ -302,33 +324,10 @@ def get_items_json (marca, modelo) -> int:
     print(f"✅Cargados {len(files_json)} archivo(s) JSON")
     #-------------------------------------------------------------------
     content_json= read_json_files(files_json, estricto=False)
-
-    if len(content_json)==0:
-        print(f"❌Extaidos {len(content_json)} contenidos JSON")
-    else:
-        print(f"✅Extaidos {len(content_json)} contenidos JSON")
-
-    #-------------------------------------------------------------------
     content_html = get_html_from_json(content_json)
-    if len(content_html)==0:
-        print(f"❌Extaidos {len(content_html)} contenidos HTML")
-    else :
-        print(f"✅Extaidos {len(content_html)} contenidos HTML")
-    #-------------------------------------------------------------------
     content_items = get_txt_between_from_html(content_html)
-    if len(content_items)==0:
-        print(f"❌Extaidos  {len(content_items)} contenidos ITEM")
-    else:
-        print(f"✅Extaidos  {len(content_items)} contenidos ITEM")
-
-    #-------------------------------------------------------------------
     items_json = get_parse_item(content_items , extrac_list=EXTRACT_LIST)
-
-    if len(items_json)==0:
-        print(f"❌Extaidos  {len(items_json)} contenidos PARSE")
-    else:
-        print(f"✅Extaidos  {len(items_json)} contenidos PARSE")
-
+    get_dict_marca_modelo( content_html, marca)
     return items_json
 
 
@@ -354,26 +353,99 @@ def get_num_pages (marca, modelo) -> int:
             print('Ruta no valida')
         
     content_json= read_json_files_(files_json)
-    print(f"Extaidos {len(content_json)} contenidos JSON")
-    content_html = get_html_from_json(content_json)[0]
-    print(f"Extaidos {len(content_html)} contenidos HTML")
-
+    content_html = get_html_from_json(content_json)
     content_pages = get_txt_between_from_html(
         content_html,
         ini_text=',"totalPages":',
-        fin_text= ',"totalResults":'
-    )[0]
+        fin_text= ',"totalResults":')
+    if len(content_pages)==0 :
+       content_pages = [',"totalPages":1,"totalResults":']
 
-    print("Texto extraído:", repr(content_pages))
+    print("Texto extraído:", repr(content_pages[0]))
 
     # Extrae el número de forma segura
     import re
-    match = re.search(r'\d+', content_pages)
+    match = re.search(r'\d+', content_pages[0])
     pages = int(match.group()) if match else None
 
     print("Páginas:", pages)
 
     return pages
+
+
+def get_dict_marca_modelo( content_html: str, marca: str):
+
+    content_dict = get_txt_between_from_html( content_html, 
+                                          ini_text='title="VICTORY',
+                                          fin_text='Más-buscado' )
+    if len(content_dict)==0:
+        print(f"⚠️ Noy hay datos para '{marca}' en el fichero")
+        return 
+
+    text=content_dict[0]
+
+    # Analizar con BeautifulSoup
+    soup = BeautifulSoup(text, "html.parser")
+
+    # Encontrar todas las etiquetas <a> dentro del div con clase 'sui-ListTagcloud'
+    links = soup.select("div.sui-ListTagcloud a")
+
+    # Crear el diccionario de marcas
+    dict_marca = {}
+    for a in links:
+        nombre = a.text.strip()                     # Ej: "BMW"
+        href = a.get("href")                        # Ej: "https://motos.coches.net/segunda-mano/bmw/"
+        if href:
+            slug = href.strip("/").split("/")[-1]   # Extrae 'bmw' del final
+            dict_marca[nombre] = slug
+
+    # Crear el directorio si no existe
+    os.makedirs("dict", exist_ok=True)
+
+    # Nombre del archivo de salida
+    file_path = f"dict/dict_{marca}.py"
+
+    # ✅ Comprobar si ya existe
+    if os.path.exists(file_path):
+        print(f"⚠️ El diccionario para '{marca}' ya existe en: {file_path}. No se sobrescribe.")
+        return
+
+    # Escribir el contenido al archivo si no existe
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(f"dicc_{marca}_modelo = {{\n")
+        for nombre in sorted(dict_marca):
+            f.write(f'    "{nombre}": "{dict_marca[nombre]}",\n')
+        f.write("}\n\n")
+
+    print(f"✅ Diccionario de modelos de marca guardado en: {file_path}")
+    return 
+
+
+
+def remove_duplicates_from_json(data ):
+    """
+    Elimina duplicados de una estructura JSON (lista de dicts, strings, ints, etc.).
+    Mantiene el orden original.
+    Devuelve la lista limpia.
+    """
+
+    # Si no es una lista, no se modifica
+    if not isinstance(data, list):
+        print("⚠️ La estructura JSON no es una lista. No se modifica.")
+        return data
+
+    seen = set()
+    unique_data = []
+
+    for item in data:
+        # Crea una clave única hashable (convierte dicts a JSON ordenado)
+        key = json.dumps(item, sort_keys=True) if isinstance(item, dict) else str(item)
+        if key not in seen:
+            seen.add(key)
+            unique_data.append(item)
+
+    print(f"✅ Eliminados {len(data) - len(unique_data)} duplicados. Total final: {len(unique_data)} registros.")
+    return unique_data
 
 
 #if __name__ == "__main__":
