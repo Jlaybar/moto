@@ -179,7 +179,7 @@ def get_txt_between_from_html(
 
     resultados: List[str] = []
 
-    for i in range(len(textos)-1):
+    for i in range(max(1, len(textos) - 1)):
         contenido = textos[i]
         contenido = contenido.replace("\\", "")  
         ini = contenido.find(ini_text)
@@ -353,21 +353,19 @@ def get_num_pages (marca, modelo) -> int:
             print('Ruta no valida')
         
     content_json= read_json_files_(files_json)
-    print(f"Extaidos {len(content_json)} contenidos JSON")
-    content_html = get_html_from_json(content_json)[0]
-    print(f"Extaidos {len(content_html)} contenidos HTML")
-
+    content_html = get_html_from_json(content_json)
     content_pages = get_txt_between_from_html(
         content_html,
         ini_text=',"totalPages":',
-        fin_text= ',"totalResults":'
-    )[0]
+        fin_text= ',"totalResults":')
+    if len(content_pages)==0 :
+       content_pages = [',"totalPages":1,"totalResults":']
 
-    print("Texto extraído:", repr(content_pages))
+    print("Texto extraído:", repr(content_pages[0]))
 
     # Extrae el número de forma segura
     import re
-    match = re.search(r'\d+', content_pages)
+    match = re.search(r'\d+', content_pages[0])
     pages = int(match.group()) if match else None
 
     print("Páginas:", pages)
@@ -380,8 +378,11 @@ def get_dict_marca_modelo( content_html: str, marca: str):
     content_dict = get_txt_between_from_html( content_html, 
                                           ini_text='title="VICTORY',
                                           fin_text='Más-buscado' )
+    if len(content_dict)==0:
+        print(f"⚠️ Noy hay datos para '{marca}' en el fichero")
+        return 
 
-    text=content_dict[1]
+    text=content_dict[0]
 
     # Analizar con BeautifulSoup
     soup = BeautifulSoup(text, "html.parser")
@@ -418,6 +419,34 @@ def get_dict_marca_modelo( content_html: str, marca: str):
 
     print(f"✅ Diccionario de modelos de marca guardado en: {file_path}")
     return 
+
+
+
+def remove_duplicates_from_json(data ):
+    """
+    Elimina duplicados de una estructura JSON (lista de dicts, strings, ints, etc.).
+    Mantiene el orden original.
+    Devuelve la lista limpia.
+    """
+
+    # Si no es una lista, no se modifica
+    if not isinstance(data, list):
+        print("⚠️ La estructura JSON no es una lista. No se modifica.")
+        return data
+
+    seen = set()
+    unique_data = []
+
+    for item in data:
+        # Crea una clave única hashable (convierte dicts a JSON ordenado)
+        key = json.dumps(item, sort_keys=True) if isinstance(item, dict) else str(item)
+        if key not in seen:
+            seen.add(key)
+            unique_data.append(item)
+
+    print(f"✅ Eliminados {len(data) - len(unique_data)} duplicados. Total final: {len(unique_data)} registros.")
+    return unique_data
+
 
 #if __name__ == "__main__":
 #    main()
