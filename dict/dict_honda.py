@@ -1,4 +1,4 @@
-dicc_honda_modelo = {
+dict_honda = {
     "@ 125": "_125",
     "@ 150": "_150",
     "ADV 350": "adv_350",

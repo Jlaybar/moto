@@ -1,0 +1,15 @@
+[
+  {
+    "#error": true,
+    "#debug": {
+      "requestId": "bAAtwV67Y9bVZEF",
+      "url": "https://motos.coches.net/segunda-mano/honda/forza_750/?pg=1",
+      "method": "GET",
+      "retryCount": 1,
+      "errorMessages": [
+        "Error: net::ERR_TIMED_OUT at https://motos.coches.net/segunda-mano/honda/forza_750/?pg=1\n    at navigate (/home/myuser/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/Frame.js:184:27)\n    at async Deferred.race (/home/myuser/node_modules/puppeteer-core/lib/cjs/puppeteer/util/Deferred.js:36:20)\n    at async CdpFrame.goto (/home/myuser/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/Frame.js:150:25)\n    at async CdpPage.goto (/home/myuser/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Page.js:574:20)\n    at async PuppeteerCrawler._handleNavigation (/home/myuser/node_modules/@crawlee/browser/internals/browser-crawler.js:334:41)\n    at async PuppeteerCrawler._runRequestHandler (/home/myuser/node_modules/@crawlee/browser/internals/browser-crawler.js:260:13)\n    at async PuppeteerCrawler._runRequestHandler (/home/myuser/node_modules/@crawlee/puppeteer/internals/puppeteer-crawler.js:114:9)\n    at async wrap (/home/myuser/node_modules/@apify/timeout/cjs/index.cjs:54:21)",
+        "Error: net::ERR_TIMED_OUT at https://motos.coches.net/segunda-mano/honda/forza_750/?pg=1\n    at navigate (/home/myuser/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/Frame.js:184:27)\n    at async Deferred.race (/home/myuser/node_modules/puppeteer-core/lib/cjs/puppeteer/util/Deferred.js:36:20)\n    at async CdpFrame.goto (/home/myuser/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/Frame.js:150:25)\n    at async CdpPage.goto (/home/myuser/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Page.js:574:20)\n    at async PuppeteerCrawler._handleNavigation (/home/myuser/node_modules/@crawlee/browser/internals/browser-crawler.js:334:41)\n    at async PuppeteerCrawler._runRequestHandler (/home/myuser/node_modules/@crawlee/browser/internals/browser-crawler.js:260:13)\n    at async PuppeteerCrawler._runRequestHandler (/home/myuser/node_modules/@crawlee/puppeteer/internals/puppeteer-crawler.js:114:9)\n    at async wrap (/home/myuser/node_modules/@apify/timeout/cjs/index.cjs:54:21)"
+      ]
+    }
+  }
+]

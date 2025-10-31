@@ -1,0 +1,15 @@
+[
+  {
+    "#error": true,
+    "#debug": {
+      "requestId": "1stXRLKS1OTfGFN",
+      "url": "https://motos.coches.net/segunda-mano/honda/?pg=1",
+      "method": "GET",
+      "retryCount": 1,
+      "errorMessages": [
+        "Error: Request blocked - received 403 status code.\n    at PuppeteerCrawler._throwOnBlockedRequest (/home/myuser/node_modules/@crawlee/basic/internals/basic-crawler.js:855:19)\n    at PuppeteerCrawler._responseHandler (/home/myuser/node_modules/@crawlee/browser/internals/browser-crawler.js:383:22)\n    at PuppeteerCrawler._runRequestHandler (/home/myuser/node_modules/@crawlee/browser/internals/browser-crawler.js:262:24)\n    at async PuppeteerCrawler._runRequestHandler (/home/myuser/node_modules/@crawlee/puppeteer/internals/puppeteer-crawler.js:114:9)\n    at async wrap (/home/myuser/node_modules/@apify/timeout/cjs/index.cjs:54:21)",
+        "Error: Request blocked - received 403 status code.\n    at PuppeteerCrawler._throwOnBlockedRequest (/home/myuser/node_modules/@crawlee/basic/internals/basic-crawler.js:855:19)\n    at PuppeteerCrawler._responseHandler (/home/myuser/node_modules/@crawlee/browser/internals/browser-crawler.js:383:22)\n    at PuppeteerCrawler._runRequestHandler (/home/myuser/node_modules/@crawlee/browser/internals/browser-crawler.js:262:24)\n    at async PuppeteerCrawler._runRequestHandler (/home/myuser/node_modules/@crawlee/puppeteer/internals/puppeteer-crawler.js:114:9)\n    at async wrap (/home/myuser/node_modules/@apify/timeout/cjs/index.cjs:54:21)"
+      ]
+    }
+  }
+]

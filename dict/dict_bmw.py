@@ -7,7 +7,7 @@ Ejemplo de uso:
 
 from typing import Dict
 
-dict_bmw_modelo = {
+dict_bmw = {
     "C 400 GT": "c_400_gt",
     "C 400 X": "c_400_x",
     "C 600 Sport": "c_600_sport",

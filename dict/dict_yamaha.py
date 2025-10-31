@@ -1,4 +1,4 @@
-dicc_yamaha_modelo = {
+dict_yamaha = {
     "Aerox 4": "aerox",
     "Aerox 50": "aerox_50",
     "Aerox 50 R": "aerox_50_r",
@@ -243,5 +243,3 @@ dicc_yamaha_modelo = {
     "YZF-R3": "yzf-r3",
 }
 
-dicc_model = []
-dicc_model.append(dicc_yamaha_modelo)
