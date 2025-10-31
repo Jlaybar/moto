@@ -327,7 +327,6 @@ def get_items_json (marca, modelo) -> int:
     content_html = get_html_from_json(content_json)
     content_items = get_txt_between_from_html(content_html)
     items_json = get_parse_item(content_items , extrac_list=EXTRACT_LIST)
-    get_dict_marca_modelo( content_html, marca)
     return items_json
 
 
@@ -373,8 +372,65 @@ def get_num_pages (marca, modelo) -> int:
     return pages
 
 
-def get_dict_marca_modelo( content_html: str, marca: str):
+def remove_duplicates_from_json(data ):
+    """
+    Elimina duplicados de una estructura JSON (lista de dicts, strings, ints, etc.).
+    Mantiene el orden original.
+    Devuelve la lista limpia.
+    """
 
+    # Si no es una lista, no se modifica
+    if not isinstance(data, list):
+        print("⚠️ La estructura JSON no es una lista. No se modifica.")
+        return data
+
+    seen = set()
+    unique_data = []
+
+    for item in data:
+        # Crea una clave única hashable (convierte dicts a JSON ordenado)
+        key = json.dumps(item, sort_keys=True) if isinstance(item, dict) else str(item)
+        if key not in seen:
+            seen.add(key)
+            unique_data.append(item)
+
+    print(f"✅ Eliminados {len(data) - len(unique_data)} duplicados. Total final: {len(unique_data)} registros.")
+    return unique_data
+
+
+
+def get_dict_marca ( marca: str):
+
+     # Nombre del archivo de salida
+    file_path = f"dict/dict_{marca}.py"
+
+    # ✅ Comprobar si ya existe
+    if os.path.exists(file_path):
+        print(f"⚠️ El diccionario para '{marca}' ya existe en: {file_path}. No se sobrescribe.")
+        return
+
+
+    PATH_ROW = f"data/{marca}/tmp"
+    p = Path(PATH_ROW)
+    files_json = []
+    if p.is_file() or p.suffix.lower() == '.json':
+        if p.suffix.lower() != '.json':
+            p = p.with_suffix('.json')
+        files_json = [p]
+    elif p.is_dir():
+        files_json = list_json_flies(p, recursivo=False)
+    else:
+        candidate = p.with_suffix('.json')
+        if candidate.exists():
+            files_json = [candidate]
+        else:
+            print('Ruta no valida')
+            return []
+
+    print(f"✅Cargados {len(files_json)} archivo(s) JSON")
+    #-------------------------------------------------------------------
+    content_json= read_json_files(files_json, estricto=False)
+    content_html = get_html_from_json(content_json)
     content_dict = get_txt_between_from_html( content_html, 
                                           ini_text='title="VICTORY',
                                           fin_text='Más-buscado' )
@@ -402,17 +458,9 @@ def get_dict_marca_modelo( content_html: str, marca: str):
     # Crear el directorio si no existe
     os.makedirs("dict", exist_ok=True)
 
-    # Nombre del archivo de salida
-    file_path = f"dict/dict_{marca}.py"
-
-    # ✅ Comprobar si ya existe
-    if os.path.exists(file_path):
-        print(f"⚠️ El diccionario para '{marca}' ya existe en: {file_path}. No se sobrescribe.")
-        return
-
     # Escribir el contenido al archivo si no existe
     with open(file_path, "w", encoding="utf-8") as f:
-        f.write(f"dicc_{marca}_modelo = {{\n")
+        f.write(f"dict_{marca} = {{\n")
         for nombre in sorted(dict_marca):
             f.write(f'    "{nombre}": "{dict_marca[nombre]}",\n')
         f.write("}\n\n")
@@ -421,31 +469,6 @@ def get_dict_marca_modelo( content_html: str, marca: str):
     return 
 
 
-
-def remove_duplicates_from_json(data ):
-    """
-    Elimina duplicados de una estructura JSON (lista de dicts, strings, ints, etc.).
-    Mantiene el orden original.
-    Devuelve la lista limpia.
-    """
-
-    # Si no es una lista, no se modifica
-    if not isinstance(data, list):
-        print("⚠️ La estructura JSON no es una lista. No se modifica.")
-        return data
-
-    seen = set()
-    unique_data = []
-
-    for item in data:
-        # Crea una clave única hashable (convierte dicts a JSON ordenado)
-        key = json.dumps(item, sort_keys=True) if isinstance(item, dict) else str(item)
-        if key not in seen:
-            seen.add(key)
-            unique_data.append(item)
-
-    print(f"✅ Eliminados {len(data) - len(unique_data)} duplicados. Total final: {len(unique_data)} registros.")
-    return unique_data
 
 
 #if __name__ == "__main__":

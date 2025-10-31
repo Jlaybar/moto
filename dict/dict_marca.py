@@ -4,6 +4,7 @@ dict_marca = {
     "BENELLI": "benelli",
     "BETA": "beta",
     "BRP": "brp",
+    "BMW": "bmw",
     "BUELL": "buell",
     "BULTACO": "bultaco",
     "CAGIVA": "cagiva",
