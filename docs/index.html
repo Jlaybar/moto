@@ -183,10 +183,11 @@
         const cholloBG  = chollo.map(p => p.backgroundColor || green);
         const caroBG    = caro.map(p => p.backgroundColor   || red);
         const sinAnnoBG = sinAnno.map(p => p.backgroundColor || grayPoint);
-        const whiteBordersN = normal.map(() => '#ffffff');
-        const whiteBordersE = chollo.map(() => '#ffffff');
-        const whiteBordersC = caro.map(() => '#ffffff');
-        const whiteBordersS = sinAnno.map(() => '#ffffff');
+        // color bordes
+        const whiteBordersN = normal.map(() => blue);
+        const whiteBordersE = chollo.map(() => '#166534');
+        const whiteBordersC = caro.map(() => '#7f1d1d');
+        const whiteBordersS = sinAnno.map(() => blue);
 
         datasets.push(
           { label: 'Normal', data: normal, parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: normalBG, pointBorderColor: whiteBordersN, pointBorderWidth: 1 },
