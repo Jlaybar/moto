@@ -157,7 +157,26 @@
 
         // Banda y curva de ajuste
         if (fit) {
+          const residuals = items.map(d => toNumberES(d.residual)).filter(v => Number.isFinite(v));
+          let sigma = 0;
+          if (residuals.length >= 3) {
+            const sorted = residuals.slice().sort((a,b)=>a-b);
+            const median = sorted[Math.floor(sorted.length/2)];
+            const absDev = residuals.map(v => Math.abs(v - median)).sort((a,b)=>a-b);
+            const mad = absDev[Math.floor(absDev.length/2)] || 0;
+            const stddev = (() => { const m = residuals.reduce((s,v)=>s+v,0)/residuals.length; const vv = residuals.reduce((s,x)=>s+(x-m)*(x-m),0)/residuals.length; return Math.sqrt(vv); })();
+            sigma = mad > 0 ? 1.4826 * mad : stddev;
+          }
+          if (sigma > 0) {
+            const z = 1.96;
+            const bandHigh = fit.map(p => ({ x: p.x, y: p.y + z * sigma }));
+            const bandLow  = fit.map(p => ({ x: p.x, y: p.y - z * sigma }));
+            datasets.push({ label: 'Band High', type: 'line', data: bandHigh, parsing: false, borderColor: 'rgba(0,0,0,0)', pointRadius: 0, tension: 0 });
+            datasets.push({ label: 'Band Low',  type: 'line', data: bandLow,  parsing: false, borderColor: 'rgba(0,0,0,0)', pointRadius: 0, tension: 0, fill: { target: '-1' }, backgroundColor: 'rgba(226,232,240,0.10)' });
+          }
           datasets.push({ label: 'Ajuste', type: 'line', data: fit, parsing: false, borderColor: blue, borderWidth: 2.5, pointRadius: 0, tension: 0 });
+        }
+
         }
 // Puntos
         const normalBG  = normal.map(p => p.backgroundColor || '#3b82f6');
