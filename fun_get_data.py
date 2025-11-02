@@ -12,7 +12,7 @@ from apify_client import ApifyClient
 def get_apify_data (marca, modelo, num_paginas=1,  exe=1):
     # Aquí puedes implementar cualquier lógica adicional si es necesario
     # Comprobar si ya existe el archivo data/<marca>/<modelo>.json
-    json_path = os.path.join("data", str(marca), f"{modelo}.json")
+    json_path = os.path.join("data", "raw", str(marca), f"{modelo}.json")
 
     if num_paginas==0:
         delete_json_file(marca,modelo,num_paginas)
@@ -130,8 +130,8 @@ def get_apify_dict (marca, exe=1):
         "verboseLog": True
     }
     
-    json_path = os.path.join("data", str(marca), "tmp.json")
-    os.path.join("data", str(marca), f"tmp.json")
+    json_path = os.path.join("data", "raw", str(marca), "tmp.json")
+    os.path.join("data", "raw", str(marca), f"tmp.json")
     if os.path.isfile(json_path):
         exe = 0
         print(f"✅ El archivo {json_path} ya existe. No se ejecutará el Actor.")
@@ -166,7 +166,7 @@ def delete_json_file(marca, modelo, num_paginas):
     import os
     import json
 
-    json_path = os.path.join("data", str(marca), f"{modelo}.json")
+    json_path = os.path.join("data", "raw", str(marca), f"{modelo}.json")
 
     if os.path.isfile(json_path):
         try:
@@ -264,4 +264,3 @@ def get_dict_position(data: dict, i: int=0):
          clave ='No existe'
          valor = ''
     return  clave, valor 
-
