@@ -12,7 +12,7 @@ from apify_client import ApifyClient
 def get_apify_data (marca, modelo, num_paginas=1,  exe=1):
     # Aquí puedes implementar cualquier lógica adicional si es necesario
     # Comprobar si ya existe el archivo data/<marca>/<modelo>.json
-    json_path = os.path.join("data", str(marca), f"{modelo}.json")
+    json_path = os.path.join("data", "raw", str(marca), f"{modelo}.json")
 
     if num_paginas==0:
         delete_json_file(marca,modelo,num_paginas)
@@ -77,13 +77,13 @@ def get_apify_data (marca, modelo, num_paginas=1,  exe=1):
         print(f"Se guardaron {len(result)} elementos en la variable 'result'")
 
         # Crear el directorio si no existe (data/<marca>)
-        ruta_directorio = f"data/{marca}"
+        ruta_directorio = f"data/raw/{marca}"
         os.makedirs(ruta_directorio, exist_ok=True) 
         # Guardar en archivo JSON
-        with open(f'data/{marca}/{modelo}.json', 'w', encoding='utf-8') as f:
+        with open(f'data/raw/{marca}/{modelo}.json', 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
 
-        print(f"✅ Datos guardados en :data/{marca}/{modelo}.json ")
+        print(f"✅ Datos guardados en :data/raw/{marca}/{modelo}.json ")
 
 
     return 
@@ -130,8 +130,8 @@ def get_apify_dict (marca, exe=1):
         "verboseLog": True
     }
     
-    json_path = os.path.join("data", str(marca), "tmp.json")
-    os.path.join("data", str(marca), f"tmp.json")
+    json_path = os.path.join("data", "raw", str(marca), "tmp.json")
+    os.path.join("data", "raw", str(marca), f"tmp.json")
     if os.path.isfile(json_path):
         exe = 0
         print(f"✅ El archivo {json_path} ya existe. No se ejecutará el Actor.")
@@ -150,13 +150,13 @@ def get_apify_dict (marca, exe=1):
         print(f"Se guardaron {len(result)} elementos en la variable 'result'")
 
         # Crear el directorio si no existe (data/<marca>)
-        ruta_directorio = f"data/{marca}"
+        ruta_directorio = f"data/raw/{marca}"
         os.makedirs(ruta_directorio, exist_ok=True) 
         # Guardar en archivo JSON
-        with open(f'data/{marca}/tmp.json', 'w', encoding='utf-8') as f:
+        with open(f'data/raw/{marca}/tmp.json', 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
 
-        print(f"✅ Datos guardados en :data/{marca}/tmp.json ")
+        print(f"✅ Datos guardados en :data/raw/{marca}/tmp.json ")
 
 
     return 
@@ -166,7 +166,7 @@ def delete_json_file(marca, modelo, num_paginas):
     import os
     import json
 
-    json_path = os.path.join("data", str(marca), f"{modelo}.json")
+    json_path = os.path.join("data", "raw", str(marca), f"{modelo}.json")
 
     if os.path.isfile(json_path):
         try:
@@ -264,5 +264,3 @@ def get_dict_position(data: dict, i: int=0):
          clave ='No existe'
          valor = ''
     return  clave, valor 
-
-

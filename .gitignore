@@ -48,3 +48,18 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+## Local scratch files
+__fun_*
+__tail.txt
+
+## Jupyter temp files
+*-checkpoint.ipynb
+
+## Editor/OS backup files
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+*.orig
