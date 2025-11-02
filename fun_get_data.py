@@ -89,9 +89,6 @@ def get_apify_data (marca, modelo, num_paginas=1,  exe=1):
     return 
 
 
-
-
-
 def get_apify_dict (marca, exe=1):
     # Aquí puedes implementar cualquier lógica adicional si es necesario
     # Comprobar si ya existe el archivo data/<marca>/<modelo>.json
