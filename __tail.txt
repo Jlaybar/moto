@@ -1,0 +1,10 @@
+﻿}
+""")
+        sel_year.js_on_change('value', cb_year)
+        controls.append(sel_year)
+
+    if controls:
+        show(column(*controls, p))
+    else:
+        show(p)
+
