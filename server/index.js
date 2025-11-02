@@ -247,14 +247,67 @@ app.post('/clear', (req, res) => {
 
 // DB endpoints removed. Use Flask service on port 5000 for DB APIs.
 
+// ----------------------------------------------------
+//          MODELO: precio vs km (JSON por marca/modelo)
+// ----------------------------------------------------
+// Devuelve el JSON existente en data/model/{marca}/{modelo}.json
+// Ejemplos:
+//   GET /api/model/honda/x-adv
+//   GET /api/plot_price_km_by_year_json?marca=honda&modelo=x-adv
+function resolveModelPath(marca, modelo) {
+  const safeMarca = String(marca || '').trim().toLowerCase();
+  // Normalizamos modelo: minúsculas, espacios->'_', múltiples separadores -> '-'
+  let safeModelo = String(modelo || '').trim().toLowerCase();
+  safeModelo = safeModelo
+    .replace(/\s+/g, '_')
+    .replace(/_{2,}/g, '_')
+    .replace(/[^a-z0-9_\-\.]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-_]+|[-_]+$/g, '');
+  // Construimos ruta
+  const filePath = path.join(__dirname, '..', 'data', 'model', safeMarca, `${safeModelo}.json`);
+  return filePath;
+}
+
+app.get('/api/model/:marca/:modelo', (req, res) => {
+  try {
+    const filePath = resolveModelPath(req.params.marca, req.params.modelo);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'not found' });
+    res.sendFile(filePath);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'failed to read model json' });
+  }
+});
+
+app.get('/api/plot_price_km_by_year_json', (req, res) => {
+  try {
+    const { marca, modelo } = req.query;
+    const filePath = resolveModelPath(marca, modelo);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'not found' });
+    res.sendFile(filePath);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'failed to read model json' });
+  }
+});
+
 // Serve index: prefer public/index.html, fallback to docs/index.html
 app.get(['/', '/index.html'], (req, res) => {
   const publicIndex = path.join(__dirname, '..', 'public', 'index.html');
   const docsIndex = path.join(__dirname, '..', 'docs', 'index.html');
-  let filePath = publicIndex;
-  if (!fs.existsSync(publicIndex) && fs.existsSync(docsIndex)) filePath = docsIndex;
+  // Preferimos docs/index.html (versión de gráfico) para evitar inconsistencias
+  let filePath = docsIndex;
+  if (!fs.existsSync(docsIndex) && fs.existsSync(publicIndex)) filePath = publicIndex;
   if (fs.existsSync(filePath)) res.sendFile(filePath);
   else res.status(404).send('index.html no encontrado');
+});
+
+// Página de chat SSE clásica en /chat
+app.get(['/chat', '/chat.html'], (req, res) => {
+  const publicIndex = path.join(__dirname, '..', 'public', 'index.html');
+  if (fs.existsSync(publicIndex)) return res.sendFile(publicIndex);
+  return res.status(404).send('public/index.html no encontrado');
 });
 
 // 404

@@ -1,139 +1,293 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Chat básico (Frontend)</title>
+    <title>Precio vs Kilómetros</title>
     <style>
-      :root { font-family: system-ui, sans-serif; }
-      body { margin: 0; display: grid; grid-template-rows: auto auto 1fr auto; height: 100vh; }
-      header { padding: 12px 16px; background: #0f172a; color: white; }
-      .config { padding: 8px 16px; background: #111827; color: #e5e7eb; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-      .config input { width: 100%; }
-      main { padding: 12px 16px; overflow: auto; background: #f8fafc; }
-      footer { padding: 12px 16px; background: #e2e8f0; display: grid; gap: 8px; grid-template-columns: 120px 1fr auto auto; }
-      #log { display: flex; flex-direction: column; gap: 6px; }
-      .msg { background: white; padding: 8px 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
-      .sys { color: #475569; font-style: italic; }
-      input, button { font: inherit; padding: 8px 10px; }
-      button { background: #0ea5e9; color: white; border: 0; border-radius: 6px; cursor: pointer; }
-      button:hover { filter: brightness(0.95); }
-      #clear { background:#64748b }
+      :root {
+        --bg: #0b1220;
+        --panel: #0f172a;
+        --panel-2: #111827;
+        --text: #e2e8f0;
+        --accent: #38bdf8;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; display: grid; grid-template-rows: auto 1fr; }
+      header { display:flex; align-items:center; gap:12px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid rgba(226,232,240,.08); }
+      header h1 { font-size: 16px; margin: 0; color: var(--text); font-weight: 600; opacity: .95; }
+      .inputs { display:flex; gap:8px; align-items:center; margin-left: auto; }
+      .inputs input { background: #0b1328; color: var(--text); border: 1px solid rgba(226,232,240,.14); border-radius: 6px; padding: 6px 8px; min-width: 140px; }
+      .inputs button { background: var(--accent); color: #06101a; border: 0; border-radius: 6px; padding: 7px 10px; cursor: pointer; font-weight: 600; }
+      .inputs button:hover { filter: brightness(0.96); }
+      main { display: grid; place-items: center; padding: 10px; }
+      .panel { width: min(1200px, 98vw); border: 1px solid rgba(226,232,240,.08); border-radius: 10px; background: linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.86)); padding: 10px; }
+      .title { display:flex; align-items: baseline; justify-content: space-between; padding: 4px 8px 8px; border-bottom: 1px dashed rgba(226,232,240,.1); }
+      .title .left { display:flex; gap:12px; align-items: baseline; }
+      .title h2 { margin: 0; font-size: 15px; font-weight: 700; opacity: .95; }
+      .title small { opacity: .8; }
+      .eq { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity: .85; font-size: 12px; }
+      .chart-box{
+        width: min(900px, 98vw);
+        aspect-ratio: 3 / 2; /* 900x600 */
+        padding: 6px 6px 0;
+        min-height: 360px; /* Fallback para evitar alto 0 */
+      }
+      canvas { display: block; width: 100% !important; height: 100% !important; }
+      .error { color: #fecaca; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); padding: 6px 8px; border-radius: 6px; margin: 8px 0 0; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   </head>
   <body>
     <header>
-      <strong>Chat básico</strong>
-      <span style="opacity:0.7"> · Frontend estático</span>
-    </header>
-
-    <section class="config">
-      <div>
-        <small>Backend URL</small>
-        <input id="backend" placeholder="http://localhost:3000" />
+      <h1>Precio vs Kilómetros</h1>
+      <div class="inputs">
+        <input id="marca" placeholder="marca (p.ej. honda)" value="honda" />
+        <input id="modelo" placeholder="modelo (p.ej. x-adv)" value="x-adv" />
+        <button id="cargar">Cargar</button>
       </div>
-      <button id="connect">Conectar</button>
-    </section>
-
+    </header>
     <main>
-      <div id="log"></div>
+      <div class="panel">
+        <div class="title">
+          <div class="left">
+            <h2>Relación Precio vs Kilómetros</h2>
+            <small id="mm">-</small>
+          </div>
+          <div class="eq" id="eq"></div>
+        </div>
+        <div class="chart-box">
+          <canvas id="chart"></canvas>
+        </div>
+        <div id="msg" class="error" style="display:none"></div>
+      </div>
     </main>
-
-    <footer>
-      <input id="user" placeholder="tu nombre" />
-      <input id="text" placeholder="escribe un mensaje" />
-      <button id="send">Enviar</button>
-      <button id="clear">Limpiar</button>
-    </footer>
-
     <script>
-      const log = document.getElementById('log');
-      const user = document.getElementById('user');
-      const text = document.getElementById('text');
-      const send = document.getElementById('send');
-      const clearBtn = document.getElementById('clear');
-      const backend = document.getElementById('backend');
-      const connectBtn = document.getElementById('connect');
+      const gridColor = 'rgba(226,232,240,.16)';
+      const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#e2e8f0';
+      const green = '#22c55e';
+      const red = '#ef4444';
+      const blue = '#60a5fa';
+      const grayPoint = '#94a3b8';
 
-      let es = null;
-      const qs = new URLSearchParams(location.search);
-      const saved = localStorage.getItem('backend_url');
-      backend.value = qs.get('api') || saved || 'http://localhost:3000';
+      const $marca = document.getElementById('marca');
+      const $modelo = document.getElementById('modelo');
+      const $btn = document.getElementById('cargar');
+      const $mm = document.getElementById('mm');
+      const $eq = document.getElementById('eq');
+      const $msg = document.getElementById('msg');
+      const canvas = document.getElementById('chart');
+      let chart = null;
 
-      function addLine(html, cls = '') {
-        const div = document.createElement('div');
-        div.className = `msg ${cls}`;
-        div.innerHTML = html;
-        log.appendChild(div);
-        log.scrollTop = log.scrollHeight;
+      // --- Helpers de formato / parseo robusto ---
+      function fmtKm(v){
+        const n = toNumberES(v);
+        return Number.isFinite(n) ? n.toLocaleString('es-ES') + ' km' : String(v) + ' km';
+      }
+      function fmtEur(v){
+        const n = toNumberES(v);
+        return Number.isFinite(n) ? n.toLocaleString('es-ES') + ' €' : String(v) + ' €';
+      }
+      function toNumberES(v){
+        if (v == null) return NaN;
+        if (typeof v === 'number' && Number.isFinite(v)) return v;
+        let s = String(v).toLowerCase().trim();
+        s = s.replace(/[€\s]/g,'').replace(/km/g,'');
+        s = s.replace(/\./g,'').replace(/,/g,'.');
+        const n = Number(s);
+        return Number.isFinite(n) ? n : NaN;
       }
 
-      function setStatus(msg) { addLine(msg, 'sys'); }
+      function yearColor(y, low, high){
+        if (y == null || isNaN(low) || isNaN(high) || high <= low) return '#3b82f6';
+        const t = (y - low) / (high - low); // 0..1
+        const sat = 85 * (1 - t);
+        const light = 60 + 35 * t;
+        return `hsla(210, ${sat}%, ${light}%, 0.98)`;
+      }
 
-      function connect() {
-        const base = backend.value.replace(/\/$/, '');
-        if (es) { try { es.close(); } catch {} es = null; }
-        localStorage.setItem('backend_url', base);
-        setStatus(`🔌 conectando a ${base} ...`);
-        try {
-          es = new EventSource(base + '/events');
-        } catch (e) {
-          setStatus('❌ no se pudo abrir EventSource');
+      function buildDatasets(items){
+        const withYear = items.filter(d => d.year != null);
+        const noYear = items.filter(d => d.year == null);
+        const years = withYear.map(d => Number(d.year)).filter(v => !Number.isNaN(v));
+        const yLow = years.length ? Math.min(...years) : null;
+        const yHigh = years.length ? Math.max(...years) : null;
+
+        const makePoint = (d) => ({
+          x: toNumberES(d.km),
+          y: toNumberES(d.price),
+          url: d.url || null,
+          km_fmt: fmtKm(d.km),
+          precio_fmt: fmtEur(d.price),
+          year_fmt: d.year != null ? String(d.year) : '-'
+        });
+
+        const normal = withYear.filter(d => d.tag === 'normal').map(d => ({ ...makePoint(d), backgroundColor: yearColor(d.year, yLow, yHigh), borderColor: '#ffffff', borderWidth: 1.5 }));
+        const chollo = withYear.filter(d => d.tag === 'chollo').map(d => ({ ...makePoint(d), backgroundColor: green, borderColor: '#ffffff', borderWidth: 1.8 }));
+        const caro   = withYear.filter(d => d.tag === 'caro'  ).map(d => ({ ...makePoint(d), backgroundColor: red,   borderColor: '#ffffff', borderWidth: 1.8 }));
+        const sinAnno = noYear.map(d => ({ ...makePoint(d), backgroundColor: grayPoint, borderColor: '#ffffff', borderWidth: 1.5 }));
+
+        return { normal, chollo, caro, sinAnno, yLow, yHigh };
+      }
+
+      function computeEq(items){
+        const found = items.find(d => typeof d.eq_text === 'string' && d.eq_text);
+        return found ? found.eq_text : '';
+      }
+
+      function extractFit(items){
+        const withFit = items.find(d => Array.isArray(d.fit_x) && Array.isArray(d.fit_y));
+        if (!withFit) return null;
+        const xy = withFit.fit_x.map((x, i) => ({ x: toNumberES(x), y: toNumberES(withFit.fit_y[i]) }))
+          .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+        return xy.length ? xy : null;
+      }
+
+      function buildChart(items, marca, modelo){
+        const { normal, chollo, caro, sinAnno } = buildDatasets(items);
+        const fit = extractFit(items);
+        const eq = computeEq(items);
+
+        $mm.textContent = `${marca || ''} ${modelo || ''}`.trim() || '-';
+        $eq.textContent = eq || '';
+        $msg.style.display = 'none';
+
+        const datasets = [];
+
+        // Banda y curva de ajuste
+        if (fit) {
+          datasets.push({ label: 'Ajuste', type: 'line', data: fit, parsing: false, borderColor: red, borderWidth: 2.5, pointRadius: 0, tension: 0 });
+        }
+// Puntos
+        const normalBG  = normal.map(p => p.backgroundColor || '#3b82f6');
+        const cholloBG  = chollo.map(p => p.backgroundColor || green);
+        const caroBG    = caro.map(p => p.backgroundColor   || red);
+        const sinAnnoBG = sinAnno.map(p => p.backgroundColor || grayPoint);
+        const whiteBordersN = normal.map(() => '#ffffff');
+        const whiteBordersE = chollo.map(() => '#ffffff');
+        const whiteBordersC = caro.map(() => '#ffffff');
+        const whiteBordersS = sinAnno.map(() => '#ffffff');
+
+        datasets.push(
+          { label: 'Normal', data: normal, parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: normalBG, pointBorderColor: whiteBordersN, pointBorderWidth: 1 },
+          { label: 'Chollo', data: chollo, parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: cholloBG, pointBorderColor: whiteBordersE, pointBorderWidth: 1 },
+          { label: 'Timo',   data: caro,   parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: caroBG, pointBorderColor: whiteBordersC, pointBorderWidth: 1 },
+          { label: 'Sin año',data: sinAnno,parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: sinAnnoBG, pointBorderColor: whiteBordersS, pointBorderWidth: 1 }
+        );
+
+        if (![...normal, ...chollo, ...caro, ...sinAnno].length && !fit) {
+          $msg.textContent = 'No hay puntos válidos para graficar (revisa km/precio).';
+          $msg.style.display = '';
+          if (window.chart) { try { window.chart.destroy(); } catch {} }
           return;
         }
-        es.onmessage = (ev) => {
-          try {
-            const data = JSON.parse(ev.data);
-            if (data.type === 'system') {
-              setStatus('🟢 conectado');
-            } else if (data.type === 'message') {
-              const time = new Date(data.ts).toLocaleTimeString();
-              const name = (data.user || 'anon');
-              addLine(`<strong>${name}</strong> <small>${time}</small><br>${escapeHtml(data.text)}`);
-            } else if (data.type === 'clear') {
-              log.innerHTML = '';
+
+        if (window.chart) { try { window.chart.destroy(); } catch {} }
+        try {
+          const ctx2d = canvas.getContext('2d');
+          window.chart = new Chart(ctx2d, {
+            type: 'scatter',
+            data: { datasets },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  title: { display: true, text: 'Kilómetros recorridos (km)', color: textColor },
+                  grid: { color: gridColor },
+                  ticks: { color: textColor, callback: (v) => Number(v).toLocaleString('es-ES') }
+                },
+                y: {
+                  title: { display: true, text: 'Precio (€)', color: textColor },
+                  grid: { color: gridColor },
+                  ticks: { color: textColor, callback: (v) => Number(v).toLocaleString('es-ES') }
+                }
+              },
+              plugins: {
+                legend: { labels: { color: textColor } },
+                tooltip: {
+                  callbacks: {
+                    label(ctx){
+                      const p = ctx.raw || {};
+                      const base = `${ctx.dataset.label || ''}: `;
+                      return [
+                        base + `${p.km_fmt || ''} · ${p.precio_fmt || ''}`,
+                        `Año: ${p.year_fmt || '-'}`,
+                        p.url ? `URL: ${p.url}` : ''
+                      ].filter(Boolean);
+                    }
+                  }
+                }
+              },
+              onClick(evt){
+                const points = window.chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                if (!points.length) return;
+                const ds = window.chart.data.datasets[points[0].datasetIndex];
+                const p = ds.data[points[0].index];
+                if (p && p.url) window.open(p.url, '_blank');
+              }
             }
-          } catch {}
-        };
-        es.onerror = () => setStatus('⚠️ conexión perdida, reintentando...');
+          });
+          // Asegurar que el canvas tiene medidas después del layout inicial
+          queueMicrotask(() => window.chart && window.chart.resize());
+        } catch (err) {
+          console.error('Chart init error', err);
+          $msg.textContent = 'Error creando el gráfico';
+          $msg.style.display = '';
+        }
       }
 
-      function doSend() {
-        const base = backend.value.replace(/\/$/, '');
-        const payload = { user: user.value || 'anon', text: text.value };
-        if (!payload.text.trim()) return;
-        fetch(base + '/message', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).then(res => {
-          if (!res.ok) throw new Error('error enviando');
-          text.value = '';
-          text.focus();
-        }).catch(() => setStatus('❌ no se pudo enviar'));
+      async function cargar(){
+        const marca = $marca.value.trim();
+        const modelo = $modelo.value.trim();
+        $mm.textContent = `${marca} ${modelo}`.trim() || '-';
+        $eq.textContent = '';
+        $msg.style.display = 'none';
+        if (!marca || !modelo) {
+          $msg.textContent = 'Introduce marca y modelo';
+          $msg.style.display = '';
+          return;
+        }
+        try {
+          const url = `/api/plot_price_km_by_year_json?marca=${encodeURIComponent(marca)}&modelo=${encodeURIComponent(modelo)}`;
+          const res = await fetch(url, { cache: 'no-cache' });
+          if (!res.ok) throw new Error(`Error ${res.status}: no se pudo obtener datos`);
+          const items = await res.json();
+
+          if (!Array.isArray(items) || !items.length) {
+            throw new Error('Sin datos para graficar (la API devolvió lista vacía).');
+          }
+
+          // Normaliza nombres y parsea números robustamente
+          const data = items.map(d => ({
+            ...d,
+            km: d.km ?? d.kilometros ?? d.kilometers,
+            price: d.price != null ? d.price : d.precio
+          }))
+          .map(d => ({
+            ...d,
+            km: toNumberES(d.km),
+            price: toNumberES(d.price),
+          }))
+          .filter(d => Number.isFinite(d.km) && Number.isFinite(d.price));
+
+          if (!data.length) {
+            throw new Error('Datos recibidos pero sin km/precio numéricos.');
+          }
+
+          buildChart(data, marca, modelo);
+        } catch (e) {
+          console.error(e);
+          $msg.textContent = (e && e.message) ? e.message : 'Error cargando datos';
+          $msg.style.display = '';
+          if (window.chart) { try { window.chart.destroy(); } catch {} }
+        }
       }
 
-      function doClear() {
-        const base = backend.value.replace(/\/$/, '');
-        fetch(base + '/clear', { method: 'POST' })
-          .then(res => { if (!res.ok) throw new Error('error clear'); })
-          .catch(() => setStatus('❌ no se pudo limpiar'));
-      }
-
-      function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, c => ({
-          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        })[c]);
-      }
-
-      connectBtn.addEventListener('click', connect);
-      send.addEventListener('click', () => doSend());
-      text.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
-      clearBtn.addEventListener('click', () => doClear());
-
-      // Autoconectar al cargar
-      connect();
+      document.getElementById('cargar').addEventListener('click', cargar);
+      // Carga inicial con los valores por defecto
+      cargar();
     </script>
   </body>
-  </html>
-
+</html>
