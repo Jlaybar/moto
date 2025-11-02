@@ -77,13 +77,13 @@ def get_apify_data (marca, modelo, num_paginas=1,  exe=1):
         print(f"Se guardaron {len(result)} elementos en la variable 'result'")
 
         # Crear el directorio si no existe (data/<marca>)
-        ruta_directorio = f"data/{marca}"
+        ruta_directorio = f"data/raw/{marca}"
         os.makedirs(ruta_directorio, exist_ok=True) 
         # Guardar en archivo JSON
-        with open(f'data/{marca}/{modelo}.json', 'w', encoding='utf-8') as f:
+        with open(f'data/raw/{marca}/{modelo}.json', 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
 
-        print(f"✅ Datos guardados en :data/{marca}/{modelo}.json ")
+        print(f"✅ Datos guardados en :data/raw/{marca}/{modelo}.json ")
 
 
     return 
@@ -150,13 +150,13 @@ def get_apify_dict (marca, exe=1):
         print(f"Se guardaron {len(result)} elementos en la variable 'result'")
 
         # Crear el directorio si no existe (data/<marca>)
-        ruta_directorio = f"data/{marca}"
+        ruta_directorio = f"data/raw/{marca}"
         os.makedirs(ruta_directorio, exist_ok=True) 
         # Guardar en archivo JSON
-        with open(f'data/{marca}/tmp.json', 'w', encoding='utf-8') as f:
+        with open(f'data/raw/{marca}/tmp.json', 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
 
-        print(f"✅ Datos guardados en :data/{marca}/tmp.json ")
+        print(f"✅ Datos guardados en :data/raw/{marca}/tmp.json ")
 
 
     return 
@@ -264,5 +264,4 @@ def get_dict_position(data: dict, i: int=0):
          clave ='No existe'
          valor = ''
     return  clave, valor 
-
 

@@ -303,7 +303,7 @@ def get_items_json (marca, modelo) -> int:
 
     """Ejecución ad-hoc: carga JSON por rutas y extrae `items`."""
 
-    PATH_ROW = f"data/{marca}/{modelo}"
+    PATH_ROW = f"data/raw/{marca}/{modelo}"
 
     p = Path(PATH_ROW)
     files_json = []
@@ -333,7 +333,7 @@ def get_items_json (marca, modelo) -> int:
 
 def get_num_pages (marca, modelo) -> int:
 
-    PATH_ROW = f"data/{marca}/{modelo}"
+    PATH_ROW = f"data/raw/{marca}/{modelo}"
 
     print("Path:", repr(PATH_ROW))
     p = Path(PATH_ROW)
@@ -410,7 +410,7 @@ def get_dict_marca ( marca: str):
         return
 
 
-    PATH_ROW = f"data/{marca}/tmp"
+    PATH_ROW = f"data/raw/{marca}/tmp"
     p = Path(PATH_ROW)
     files_json = []
     if p.is_file() or p.suffix.lower() == '.json':
