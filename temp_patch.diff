@@ -1,4 +1,7 @@
-﻿<!doctype html>
+﻿*** Begin Patch
+*** Update File: public/index.html
+@@
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
@@ -365,7 +368,7 @@
           return;
         }
         try {
-          const url = `/api/model/${encodeURIComponent(marca)}/${encodeURIComponent(modelo)}`;
+          const url = `/api/plot_price_km_by_year_json?marca=${encodeURIComponent(marca)}&modelo=${encodeURIComponent(modelo)}`;
           const res = await fetch(url, { cache: 'no-cache' });
           if (!res.ok) throw new Error(`Error ${res.status}: no se pudo obtener datos`);
           const items = await res.json();
@@ -406,3 +409,5 @@
     </script>
   </body>
 </html>
+
+*** End Patch

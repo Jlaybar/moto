@@ -36,6 +36,23 @@
       }
       canvas { display: block; width: 100% !important; height: 100% !important; }
       .error { color: #fecaca; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); padding: 6px 8px; border-radius: 6px; margin: 8px 0 0; }
+
+      /* Layout fila: gráfico principal + panel lateral */
+      .row { display: grid; grid-template-columns: 1fr 60px; gap: 10px; align-items: stretch; margin-top: 8px; }
+      .chart-card { display:flex; }
+
+      /* Panel lateral invertido con degradado azul arriba */
+      .sidecard{ padding:8px; display:flex; flex-direction:column; gap:10px; align-items:center; }
+      .side-title{ font-size:14px; color:var(--text); text-align:center; opacity: .9; }
+      .grad-wrap{ position:relative; flex:1; width:100%; min-height:120px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,.1); background: #0b1328; }
+      .grad{ position:absolute; inset:0; background: linear-gradient(to bottom, #1e3a8a, #ffffff); opacity: .85; }
+      .ticks{ position:absolute; inset:8px; display:flex; flex-direction:column; justify-content:space-between; font-size:11px; color:#f1f5f9; font-weight:600; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+      .tick{ text-align:center; }
+
+      @media (max-width: 900px){
+        .row{ grid-template-columns: 1fr; }
+        .grad-wrap{ min-height:200px }
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   </head>
@@ -57,8 +74,28 @@
           </div>
           <div class="eq" id="eq"></div>
         </div>
-        <div class="chart-box">
-          <canvas id="chart"></canvas>
+        <div class="row">
+          <div class="card chart-card">
+            <div class="chart-box">
+              <canvas id="chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Panel lateral invertido con degradado azul arriba -->
+          <div class="card sidecard">
+            <div class="side-title">Años</div>
+            <div class="grad-wrap">
+              <div class="grad"></div>
+              <div class="ticks">
+                <div class="tick">2025</div>
+                <div class="tick">2024</div>
+                <div class="tick">2023</div>
+                <div class="tick">2022</div>
+                <div class="tick">2021</div>
+                <div class="tick">2020</div>
+              </div>
+            </div>
+          </div>
         </div>
         <div id="msg" class="error" style="display:none"></div>
       </div>
@@ -69,6 +106,7 @@
       const green = '#22c55e';
       const red = '#ef4444';
       const blue = '#60a5fa';
+      const darkBlue = '#1e3a8a';
       const grayPoint = '#94a3b8';
 
       const $marca = document.getElementById('marca');
@@ -101,10 +139,31 @@
 
       function yearColor(y, low, high){
         if (y == null || isNaN(low) || isNaN(high) || high <= low) return '#3b82f6';
-        const t = (y - low) / (high - low); // 0..1
+        const t = (high - y) / (high - low); // invertido: más reciente más oscuro
         const sat = 85 * (1 - t);
         const light = 60 + 35 * t;
         return `hsla(210, ${sat}%, ${light}%, 0.98)`;
+      }
+
+      // Provincias (INE) y helper para obtener nombre desde id
+      const PROVINCES = {
+        1: "Alava", 2: "Albacete", 3: "Alicante", 4: "Almeria", 5: "Avila",
+        6: "Badajoz", 7: "Islas Baleares", 8: "Barcelona", 9: "Burgos", 10: "Caceres",
+        11: "Cadiz", 12: "Castellon", 13: "Ciudad Real", 14: "Cordoba", 15: "A Coruna",
+        16: "Cuenca", 17: "Girona", 18: "Granada", 19: "Guadalajara", 20: "Guipuzcoa",
+        21: "Huelva", 22: "Huesca", 23: "Jaen", 24: "Leon", 25: "Lleida",
+        26: "La Rioja", 27: "Lugo", 28: "Madrid", 29: "Malaga", 30: "Murcia",
+        31: "Navarra", 32: "Ourense", 33: "Asturias", 34: "Palencia", 35: "Las Palmas",
+        36: "Pontevedra", 37: "Salamanca", 38: "Santa Cruz de Tenerife", 39: "Cantabria", 40: "Segovia",
+        41: "Sevilla", 42: "Soria", 43: "Tarragona", 44: "Teruel", 45: "Toledo",
+        46: "Valencia", 47: "Valladolid", 48: "Vizcaya", 49: "Zamora", 50: "Zaragoza",
+        51: "Ceuta", 52: "Melilla"
+      };
+
+      function provinceName(id){
+        const n = Number(id);
+        if (!Number.isFinite(n)) return null;
+        return PROVINCES[n] || null;
       }
 
       function buildDatasets(items){
@@ -120,13 +179,15 @@
           url: d.url || null,
           km_fmt: fmtKm(d.km),
           precio_fmt: fmtEur(d.price),
-          year_fmt: d.year != null ? String(d.year) : '-'
+          year_fmt: d.year != null ? String(d.year) : '-',
+          provincia: (provinceName(d.provinceId ?? d.province_id ?? d.provinciaId ?? d.provincia_id)
+            || d.provincia || d.province || d.localidad || d.location || d.city || null)
         });
 
-        const normal = withYear.filter(d => d.tag === 'normal').map(d => ({ ...makePoint(d), backgroundColor: yearColor(d.year, yLow, yHigh), borderColor: '#ffffff', borderWidth: 1.5 }));
+        const normal = withYear.filter(d => d.tag === 'normal').map(d => ({ ...makePoint(d), backgroundColor: yearColor(d.year, yLow, yHigh), borderColor: darkBlue, borderWidth: 1.5 }));
         const chollo = withYear.filter(d => d.tag === 'chollo').map(d => ({ ...makePoint(d), backgroundColor: green, borderColor: '#ffffff', borderWidth: 1.8 }));
         const caro   = withYear.filter(d => d.tag === 'caro'  ).map(d => ({ ...makePoint(d), backgroundColor: red,   borderColor: '#ffffff', borderWidth: 1.8 }));
-        const sinAnno = noYear.map(d => ({ ...makePoint(d), backgroundColor: grayPoint, borderColor: '#ffffff', borderWidth: 1.5 }));
+        const sinAnno = noYear.map(d => ({ ...makePoint(d), backgroundColor: grayPoint, borderColor: darkBlue, borderWidth: 1.5 }));
 
         return { normal, chollo, caro, sinAnno, yLow, yHigh };
       }
@@ -183,10 +244,10 @@
         const cholloBG  = chollo.map(p => p.backgroundColor || green);
         const caroBG    = caro.map(p => p.backgroundColor   || red);
         const sinAnnoBG = sinAnno.map(p => p.backgroundColor || grayPoint);
-        const whiteBordersN = normal.map(() => blue);
+        const whiteBordersN = normal.map(() => darkBlue);
         const whiteBordersE = chollo.map(() => '#166534');
         const whiteBordersC = caro.map(() => '#7f1d1d');
-        const whiteBordersS = sinAnno.map(() => blue);
+        const whiteBordersS = sinAnno.map(() => darkBlue);
 
         datasets.push(
           { label: 'Normal', data: normal, parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: normalBG, pointBorderColor: whiteBordersN, pointBorderWidth: 1 },
@@ -248,6 +309,37 @@
               }
             }
           });
+          // Sobrescribe tooltip y leyenda para alinear con docs/index.html
+          if (window.chart && window.chart.options && window.chart.options.plugins) {
+            // Reordenar tooltip
+            if (window.chart.options.plugins.tooltip && window.chart.options.plugins.tooltip.callbacks) {
+              window.chart.options.plugins.tooltip.callbacks.label = (ctx) => {
+                const p = ctx.raw || {};
+                return [
+                  `Año: ${p.year_fmt || '-'}`,
+                  `Km: ${p.km_fmt || '-'}`,
+                  `Precio: ${p.precio_fmt || '-'}`,
+                  `Provincia: ${p.provincia || '-'}`,
+                  p.url ? `URL: ${p.url}` : ''
+                ].filter(Boolean);
+              };
+            }
+            // Ocultar entradas de leyenda "Sin año" y "Band Low"
+            if (window.chart.options.plugins.legend && window.chart.options.plugins.legend.labels) {
+              window.chart.options.plugins.legend.labels.filter = (item, chart) => {
+                try {
+                  const ds = chart?.data?.datasets?.[item.datasetIndex];
+                  const lab = String((ds && ds.label) || item.text || '').toLowerCase();
+                  if (lab.includes('sin a')) return false;
+                  if (lab.includes('band low')) return false;
+                  return true;
+                } catch {
+                  return true;
+                }
+              };
+            }
+            try { window.chart.update(); } catch {}
+          }
           // Asegurar que el canvas tiene medidas después del layout inicial
           queueMicrotask(() => window.chart && window.chart.resize());
         } catch (err) {
@@ -269,7 +361,7 @@
           return;
         }
         try {
-          const url = `/api/plot_price_km_by_year_json?marca=${encodeURIComponent(marca)}&modelo=${encodeURIComponent(modelo)}`;
+          const url = `/api/model/${encodeURIComponent(marca)}/${encodeURIComponent(modelo)}`;
           const res = await fetch(url, { cache: 'no-cache' });
           if (!res.ok) throw new Error(`Error ${res.status}: no se pudo obtener datos`);
           const items = await res.json();

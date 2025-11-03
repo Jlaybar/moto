@@ -280,17 +280,7 @@ app.get('/api/model/:marca/:modelo', (req, res) => {
   }
 });
 
-app.get('/api/plot_price_km_by_year_json', (req, res) => {
-  try {
-    const { marca, modelo } = req.query;
-    const filePath = resolveModelPath(marca, modelo);
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'not found' });
-    res.sendFile(filePath);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'failed to read model json' });
-  }
-});
+// Ruta legacy eliminada: /api/plot_price_km_by_year_json (usar /api/model/:marca/:modelo)
 
 // Serve index: prefer public/index.html, fallback to docs/index.html
 app.get(['/', '/index.html'], (req, res) => {
