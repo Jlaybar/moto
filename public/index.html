@@ -147,13 +147,13 @@
 
       const norm = (s) => String(s||'').trim().toLowerCase();
 
-      function fillSelect(selectEl, values, preferred){
+      function fillSelect(selectEl, values, preferred, labelFn){
         const current = selectEl.value;
         selectEl.innerHTML = '';
         for (const v of values){
           const opt = document.createElement('option');
           opt.value = v;
-          opt.textContent = v;
+          opt.textContent = labelFn ? labelFn(v) : v;
           selectEl.appendChild(opt);
         }
         // Selección prioritaria: mantener actual, luego preferred, luego primera
@@ -161,14 +161,23 @@
         if (setTo) selectEl.value = setTo;
       }
 
+      // Etiquetas visibles sin cambiar el value
+      function labelBrand(v){
+        const s = String(v || '').replace(/[_-]+/g, ' ').toLowerCase();
+        return s.replace(/\b[a-z]/g, c => c.toUpperCase());
+      }
+      function labelModel(v){
+        return String(v || '').replace(/_/g, ' ').toUpperCase();
+      }
+
       async function populateBrands(){
         const index = await loadModelsIndex();
         const brands = index.map(e => e.marca).filter(Boolean);
         // Intenta mantener el valor actual o por defecto 'honda'
         if (brands.length === 0) {
-          fillSelect($marca, ['honda'], 'honda');
+          fillSelect($marca, ['honda'], 'honda', labelBrand);
         } else {
-          fillSelect($marca, brands, 'honda');
+          fillSelect($marca, brands, 'honda', labelBrand);
         }
       }
 
@@ -179,9 +188,9 @@
         const models = entry ? (entry.modelos || []) : [];
         // Intenta mantener el modelo actual o por defecto 'x-adv'
         if (models.length === 0) {
-          fillSelect($modelo, ['x-adv'], 'x-adv');
+          fillSelect($modelo, ['x-adv'], 'x-adv', labelModel);
         } else {
-          fillSelect($modelo, models, 'x-adv');
+          fillSelect($modelo, models, 'x-adv', labelModel);
         }
       }
 
