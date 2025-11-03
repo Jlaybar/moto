@@ -159,7 +159,8 @@
           url: d.url || null,
           km_fmt: fmtKm(d.km),
           precio_fmt: fmtEur(d.price),
-          year_fmt: d.year != null ? String(d.year) : '-'
+          year_fmt: d.year != null ? String(d.year) : '-',
+          provincia: d.provincia ?? d.province ?? d.localidad ?? d.location ?? d.city ?? null
         });
 
         const normal = withYear.filter(d => d.tag === 'normal').map(d => ({ ...makePoint(d), backgroundColor: yearColor(d.year, yLow, yHigh), borderColor: '#ffffff', borderWidth: 1.5 }));
@@ -288,6 +289,21 @@
               }
             }
           });
+
+          // Reordenar tooltip: Año, km, precio, provincia, url
+          if (window.chart && window.chart.options && window.chart.options.plugins && window.chart.options.plugins.tooltip && window.chart.options.plugins.tooltip.callbacks) {
+            window.chart.options.plugins.tooltip.callbacks.label = (ctx) => {
+              const p = ctx.raw || {};
+              return [
+                `Año: ${p.year_fmt || '-'}`,
+                `Km: ${p.km_fmt || '-'}`,
+                `Precio: ${p.precio_fmt || '-'}`,
+                `Provincia: ${p.provincia || '-'}`,
+                p.url ? `URL: ${p.url}` : ''
+              ].filter(Boolean);
+            };
+            try { window.chart.update(); } catch {}
+          }
           // Asegurar que el canvas tiene medidas después del layout inicial
           queueMicrotask(() => window.chart && window.chart.resize());
         } catch (err) {
