@@ -61,8 +61,10 @@
     <header>
       <h1>Precio vs Kilómetros</h1>
       <div class="inputs">
-        <input id="marca" placeholder="marca (p.ej. honda)" value="honda" />
-        <input id="modelo" placeholder="modelo (p.ej. x-adv)" value="x-adv" />
+        <label for="marca">Marca</label>
+        <select id="marca"></select>
+        <label for="modelo">Modelo</label>
+        <select id="modelo"></select>
         <button id="cargar">Cargar</button>
       </div>
     </header>
@@ -118,6 +120,67 @@
       const $msg = document.getElementById('msg');
       const canvas = document.getElementById('chart');
       let chart = null;
+      // --- Carga dinámica de modelos por marca ---
+      let MODELS_INDEX_CACHE = null;
+      async function loadModelsIndex(){
+        if (MODELS_INDEX_CACHE) return MODELS_INDEX_CACHE;
+        const tries = [
+          '/api/models_index',
+          '/data/model/models_index.json'
+        ];
+        for (const url of tries){
+          try {
+            const resp = await fetch(url, { cache: 'no-cache' });
+            if (!resp.ok) continue;
+            const data = await resp.json();
+            if (Array.isArray(data)) {
+              MODELS_INDEX_CACHE = data;
+              return MODELS_INDEX_CACHE;
+            }
+          } catch (e) {
+            // siguiente intento
+          }
+        }
+        MODELS_INDEX_CACHE = [];
+        return MODELS_INDEX_CACHE;
+      }
+
+      const norm = (s) => String(s||'').trim().toLowerCase();
+
+      function fillSelect(selectEl, values, preferred){
+        const current = selectEl.value;
+        selectEl.innerHTML = '';
+        for (const v of values){
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          selectEl.appendChild(opt);
+        }
+        const setTo = values.includes(current) ? current : (preferred && values.includes(preferred) ? preferred : (values[0] || ''));
+        if (setTo) selectEl.value = setTo;
+      }
+
+      async function populateBrands(){
+        const index = await loadModelsIndex();
+        const brands = index.map(e => e.marca).filter(Boolean);
+        if (brands.length === 0) {
+          fillSelect($marca, ['honda'], 'honda');
+        } else {
+          fillSelect($marca, brands, 'honda');
+        }
+      }
+
+      async function updateModelOptions(){
+        const brand = norm($marca.value);
+        const index = await loadModelsIndex();
+        const entry = index.find(e => norm(e.marca) === brand);
+        const models = entry ? (entry.modelos || []) : [];
+        if (models.length === 0) {
+          fillSelect($modelo, ['x-adv'], 'x-adv');
+        } else {
+          fillSelect($modelo, models, 'x-adv');
+        }
+      }
 
       // --- Helpers de formato / parseo robusto ---
       function fmtKm(v){
@@ -401,8 +464,13 @@
       }
 
       document.getElementById('cargar').addEventListener('click', cargar);
-      // Carga inicial con los valores por defecto
-      cargar();
+      $marca.addEventListener('change', updateModelOptions);
+      // Carga inicial: marcas → modelos → cargar
+      (async () => {
+        await populateBrands();
+        await updateModelOptions();
+        await cargar();
+      })();
     </script>
   </body>
 </html>

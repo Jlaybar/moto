@@ -282,6 +282,18 @@ app.get('/api/model/:marca/:modelo', (req, res) => {
 
 // Ruta legacy eliminada: /api/plot_price_km_by_year_json (usar /api/model/:marca/:modelo)
 
+// Índice de modelos estimados: devuelve data/model/models_index.json (o fallback a data/models_index.json)
+app.get('/api/models_index', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '..', 'data', 'model', 'models_index.json');
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'models index not found' });
+    res.sendFile(filePath);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'failed to read models index' });
+  }
+});
+
 // Serve index: prefer public/index.html, fallback to docs/index.html
 app.get(['/', '/index.html'], (req, res) => {
   const publicIndex = path.join(__dirname, '..', 'public', 'index.html');
