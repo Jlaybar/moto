@@ -107,6 +107,7 @@
       const green = '#22c55e';
       const red = '#ef4444';
       const blue = '#60a5fa';
+      const darkBlue = '#1e3a8a';
       const grayPoint = '#94a3b8';
 
       const $marca = document.getElementById('marca');
@@ -185,10 +186,10 @@
             || d.provincia || d.province || d.localidad || d.location || d.city || null)
         });
 
-        const normal = withYear.filter(d => d.tag === 'normal').map(d => ({ ...makePoint(d), backgroundColor: yearColor(d.year, yLow, yHigh), borderColor: '#ffffff', borderWidth: 1.5 }));
+        const normal = withYear.filter(d => d.tag === 'normal').map(d => ({ ...makePoint(d), backgroundColor: yearColor(d.year, yLow, yHigh), borderColor: darkBlue, borderWidth: 1.5 }));
         const chollo = withYear.filter(d => d.tag === 'chollo').map(d => ({ ...makePoint(d), backgroundColor: green, borderColor: '#ffffff', borderWidth: 1.8 }));
         const caro   = withYear.filter(d => d.tag === 'caro'  ).map(d => ({ ...makePoint(d), backgroundColor: red,   borderColor: '#ffffff', borderWidth: 1.8 }));
-        const sinAnno = noYear.map(d => ({ ...makePoint(d), backgroundColor: grayPoint, borderColor: '#ffffff', borderWidth: 1.5 }));
+        const sinAnno = noYear.map(d => ({ ...makePoint(d), backgroundColor: grayPoint, borderColor: darkBlue, borderWidth: 1.5 }));
 
         return { normal, chollo, caro, sinAnno, yLow, yHigh };
       }
@@ -246,15 +247,15 @@
         const caroBG    = caro.map(p => p.backgroundColor   || red);
         const sinAnnoBG = sinAnno.map(p => p.backgroundColor || grayPoint);
         // color bordes
-        const whiteBordersN = normal.map(() => blue);
+        const whiteBordersN = normal.map(() => darkBlue);
         const whiteBordersE = chollo.map(() => '#166534');
         const whiteBordersC = caro.map(() => '#7f1d1d');
-        const whiteBordersS = sinAnno.map(() => blue);
+        const whiteBordersS = sinAnno.map(() => darkBlue);
 
         datasets.push(
           { label: 'Normal', data: normal, parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: normalBG, pointBorderColor: whiteBordersN, pointBorderWidth: 1 },
-          { label: 'Chollo', data: chollo, parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: cholloBG, pointBorderColor: whiteBordersE, pointBorderWidth: 1 },
-          { label: 'Timo',   data: caro,   parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: caroBG, pointBorderColor: whiteBordersC, pointBorderWidth: 1 },
+          { label: 'Barato', data: chollo, parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: cholloBG, pointBorderColor: whiteBordersE, pointBorderWidth: 1 },
+          { label: 'Caro',   data: caro,   parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: caroBG, pointBorderColor: whiteBordersC, pointBorderWidth: 1 },
           { label: 'Sin año',data: sinAnno,parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: sinAnnoBG, pointBorderColor: whiteBordersS, pointBorderWidth: 1 }
         );
 
@@ -287,7 +288,24 @@
                 }
               },
               plugins: {
-                legend: { labels: { color: textColor } },
+                legend: { 
+                  labels: { 
+                    color: textColor,
+                    // Oculta selectores de series específicas en la leyenda
+                    filter: (item, chart) => {
+                      try {
+                        const ds = chart?.data?.datasets?.[item.datasetIndex];
+                        const lab = String((ds && ds.label) || item.text || '').toLowerCase();
+                        // Oculta: "Sin año" y "Band Low"
+                        if (lab.includes('sin a')) return false;
+                        if (lab.includes('band low')) return false;
+                        return true;
+                      } catch {
+                        return true;
+                      }
+                    }
+                  }
+                },
                 tooltip: {
                   callbacks: {
                     label(ctx){
