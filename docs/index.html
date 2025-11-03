@@ -146,6 +146,27 @@
         return `hsla(210, ${sat}%, ${light}%, 0.98)`;
       }
 
+      // Provincias (INE) y helper para obtener nombre desde id
+      const PROVINCES = {
+        1: "Alava", 2: "Albacete", 3: "Alicante", 4: "Almeria", 5: "Avila",
+        6: "Badajoz", 7: "Islas Baleares", 8: "Barcelona", 9: "Burgos", 10: "Caceres",
+        11: "Cadiz", 12: "Castellon", 13: "Ciudad Real", 14: "Cordoba", 15: "A Coruna",
+        16: "Cuenca", 17: "Girona", 18: "Granada", 19: "Guadalajara", 20: "Guipuzcoa",
+        21: "Huelva", 22: "Huesca", 23: "Jaen", 24: "Leon", 25: "Lleida",
+        26: "La Rioja", 27: "Lugo", 28: "Madrid", 29: "Malaga", 30: "Murcia",
+        31: "Navarra", 32: "Ourense", 33: "Asturias", 34: "Palencia", 35: "Las Palmas",
+        36: "Pontevedra", 37: "Salamanca", 38: "Santa Cruz de Tenerife", 39: "Cantabria", 40: "Segovia",
+        41: "Sevilla", 42: "Soria", 43: "Tarragona", 44: "Teruel", 45: "Toledo",
+        46: "Valencia", 47: "Valladolid", 48: "Vizcaya", 49: "Zamora", 50: "Zaragoza",
+        51: "Ceuta", 52: "Melilla"
+      };
+
+      function provinceName(id){
+        const n = Number(id);
+        if (!Number.isFinite(n)) return null;
+        return PROVINCES[n] || null;
+      }
+
       function buildDatasets(items){
         const withYear = items.filter(d => d.year != null);
         const noYear = items.filter(d => d.year == null);
@@ -160,7 +181,8 @@
           km_fmt: fmtKm(d.km),
           precio_fmt: fmtEur(d.price),
           year_fmt: d.year != null ? String(d.year) : '-',
-          provincia: d.provincia ?? d.province ?? d.localidad ?? d.location ?? d.city ?? null
+          provincia: (provinceName(d.provinceId ?? d.province_id ?? d.provinciaId ?? d.provincia_id)
+            || d.provincia || d.province || d.localidad || d.location || d.city || null)
         });
 
         const normal = withYear.filter(d => d.tag === 'normal').map(d => ({ ...makePoint(d), backgroundColor: yearColor(d.year, yLow, yHigh), borderColor: '#ffffff', borderWidth: 1.5 }));
