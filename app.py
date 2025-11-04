@@ -1,9 +1,22 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
 import logging
 from config import Config
+from datetime import datetime
+from fastapi.staticfiles import StaticFiles
+from pydantic import Field
+import re
+
+# Helpers para mensajes
+try:
+    from fun_mensaje import ensure_schema, insert_mensaje, EMAIL_RE
+except Exception:
+    # Si no existe el helper aún, definimos un regex básico para no romper import
+    ensure_schema = None
+    insert_mensaje = None
+    EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +53,13 @@ class QuestionResponse(BaseModel):
     model: str
     tokens_used: int
 
+
+# Modelo de entrada para mensajes
+class MensajeIn(BaseModel):
+    correo: str
+    asunto: str = Field(min_length=1, max_length=200)
+    body: str = Field(min_length=1, max_length=5000)
+
 # Endpoint de salud
 @app.get("/")
 async def root():
@@ -48,6 +68,41 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "chatgpt-backend"}
+
+
+# Montar estáticos de la carpeta public en /public
+app.mount("/public", StaticFiles(directory="public"), name="public")
+
+
+# Inicialización de base de datos en arranque
+@app.on_event("startup")
+async def _init_db():
+    try:
+        if ensure_schema:
+            ensure_schema()
+    except Exception as e:
+        logger.warning(f"No se pudo inicializar la base de datos: {e}")
+
+
+# Endpoint para crear mensajes (SQLite)
+@app.post("/api/mensajes")
+async def crear_mensaje(payload: MensajeIn, request: Request):
+    if not EMAIL_RE.match(payload.correo.strip()):
+        raise HTTPException(status_code=400, detail="Correo no válido.")
+
+    ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else None)
+    created_at = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+
+    if insert_mensaje is None:
+        raise HTTPException(status_code=500, detail="Módulo de base de datos no disponible.")
+
+    new_id = insert_mensaje(payload.correo.strip(), payload.asunto.strip(), payload.body.strip(), ip, created_at)
+    return {"ok": True, "id": new_id, "created_at": created_at}
+
+
+@app.get("/api/health")
+async def api_health():
+    return {"ok": True}
 
 # Endpoint principal para hacer preguntas
 @app.post("/ask", response_model=QuestionResponse)
@@ -94,6 +149,12 @@ async def list_models():
 
 if __name__ == "__main__":
     import uvicorn
+    # Garantiza que la tabla exista al iniciar en modo script
+    try:
+        if ensure_schema:
+            ensure_schema()
+    except Exception:
+        pass
     uvicorn.run(
         "app:app",
         host=Config.API_HOST,

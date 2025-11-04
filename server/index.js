@@ -29,6 +29,9 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: '1mb' }));
+// Estáticos: servir /public y /data
+app.use('/public', express.static(path.join(__dirname, '..', 'public')));
+app.use('/data', express.static(path.join(__dirname, '..', 'data')));
 // ----------------------------------------------------
 //          SERVICIO GMAIL INI 
 // ----------------------------------------------------
@@ -294,15 +297,26 @@ app.get('/api/models_index', (req, res) => {
   }
 });
 
-// Serve index: prefer public/index.html, fallback to docs/index.html
+// Serve index: preferir public/index.html; fallback a docs/index.html
 app.get(['/', '/index.html'], (req, res) => {
   const publicIndex = path.join(__dirname, '..', 'public', 'index.html');
+  if (fs.existsSync(publicIndex)) return res.sendFile(publicIndex);
   const docsIndex = path.join(__dirname, '..', 'docs', 'index.html');
-  // Preferimos docs/index.html (versión de gráfico) para evitar inconsistencias
-  let filePath = docsIndex;
-  if (!fs.existsSync(docsIndex) && fs.existsSync(publicIndex)) filePath = publicIndex;
-  if (fs.existsSync(filePath)) res.sendFile(filePath);
-  else res.status(404).send('index.html no encontrado');
+  if (fs.existsSync(docsIndex)) return res.sendFile(docsIndex);
+  return res.status(404).send('index.html no encontrado');
+});
+
+// Serve modelo.html desde /modelo y /modelo.html
+app.get(['/modelo', '/modelo.html'], (req, res) => {
+  const page = path.join(__dirname, '..', 'public', 'modelo.html');
+  if (fs.existsSync(page)) return res.sendFile(page);
+  return res.status(404).send('public/modelo.html no encontrado');
+});
+
+// Ruta a mensaje: redirige al servicio Python (puerto 5000)
+app.get(['/mensaje', '/mensaje.html'], (req, res) => {
+  const target = `http://localhost:5000/public/mensaje.html`;
+  return res.redirect(target);
 });
 
 // Página de chat SSE clásica en /chat
