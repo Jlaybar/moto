@@ -166,9 +166,14 @@
     (function(){
       const img = document.getElementById('slide');
       const rutas = [
-        '/data/img/inicio01.jpg',
-        '/data/img/inicio02.jpg',
-        '/data/img/inicio03.jpg'
+        '/data/img/moto_1.jpg',
+        '/data/img/moto_2.jpg',
+        '/data/img/moto_3.jpg',
+        '/data/img/moto_4.jpg',
+        '/data/img/moto_5.jpg',
+        '/data/img/moto_6.jpg',
+        '/data/img/moto_7.jpg'
+    
       ];
       // Precarga
       rutas.forEach(src => { const i = new Image(); i.src = src; });
@@ -178,7 +183,7 @@
         idx = (idx + 1) % rutas.length;
         // animación fade
         img.classList.add('fade-out');
-        setTimeout(() => { img.src = rutas[idx]; img.classList.remove('fade-out'); }, 600);
+        setTimeout(() => { img.src = rutas[idx]; img.classList.remove('fade-out'); }, 800);
       };
       // Cambia cada 3.5s
       setInterval(cambiar, 3500);
