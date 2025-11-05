@@ -6,7 +6,7 @@ import os
 from typing import Any, Dict
 
 
-SQLITE_PATH = os.getenv('DB_FILE_PATH', 'dev.db')
+SQLITE_PATH = os.getenv('DB_FILE_PATH', 'data/dev.db')
 
 # DDL solo se ejecuta si no existe la tabla
 DDL = """

@@ -4,16 +4,20 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-# Directorio base del proyecto (carpeta que contiene este archivo)
+# Directorios y base de datos
 APP_DIR = Path(__file__).resolve().parent
+ROOT_DIR = APP_DIR.parent
+DEFAULT_DB = ROOT_DIR / "data" / "dev.db"
 
 # Ruta a la base de datos (se puede sobreescribir con la variable de entorno DB_PATH)
-DB_PATH = Path(os.getenv("DB_PATH", APP_DIR / "dev.db"))
+DB_PATH = Path(os.getenv("DB_PATH", str(DEFAULT_DB)))
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 def get_db():
+    # Asegura que el directorio existe antes de abrir la conexión
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA foreign_keys=ON;")

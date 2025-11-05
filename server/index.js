@@ -14,8 +14,6 @@ const __dirname = path.dirname(__filename);
 
 // Prisma/DB bootstrap removed. Node only serves chat/Gmail.
 
-// SSE clients
-const CLIENTS = new Set();
 const app = express();
 // Prisma client removed
 
@@ -203,50 +201,6 @@ app.get('/gmail/messages/:id', async (req, res) => {
 app.get('/gmail/me', (req, res) => {
   res.json({ authenticated: Boolean(req.session.tokens) });
 });
-// ----------------------------------------------------
-//          SERVICIO CHAT
-// ----------------------------------------------------
-
-// Health
-app.get('/healthz', (req, res) => {
-  res.json({ ok: true });
-});
-
-// SSE stream
-app.get('/events', (req, res) => {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive'
-  });
-  res.write(`data: ${JSON.stringify({ type: 'system', text: 'Conectado al stream de chat' })}\n\n`);
-  CLIENTS.add(res);
-  const heartbeat = setInterval(() => { try { res.write(': ping\n\n'); } catch {} }, 30000);
-  req.on('close', () => { clearInterval(heartbeat); CLIENTS.delete(res); });
-});
-
-function broadcast(payload) {
-  for (const client of CLIENTS) {
-    try { client.write(`data: ${JSON.stringify(payload)}\n\n`); }
-    catch { try { client.end(); } catch {} CLIENTS.delete(client); }
-  }
-}
-
-// Chat message
-app.post('/message', (req, res) => {
-  const user = req.body?.user ? String(req.body.user).slice(0, 32) : 'anon';
-  const text = req.body?.text ? String(req.body.text).slice(0, 1000) : '';
-  if (!text.trim()) return res.status(400).json({ error: 'text requerido' });
-  const msg = { type: 'message', user, text, ts: Date.now() };
-  broadcast(msg);
-  res.status(202).json({ ok: true });
-});
-
-// Clear chat
-app.post('/clear', (req, res) => {
-  broadcast({ type: 'clear' });
-  res.status(202).json({ ok: true });
-});
 
 // DB endpoints removed. Use Flask service on port 5000 for DB APIs.
 
@@ -334,10 +288,6 @@ app.use((req, res) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Chat backend escuchando en http://localhost:${PORT}`);
   console.log('Endpoints:');
-  console.log('  GET    /healthz');
-  console.log('  GET    /events   (SSE stream)');
-  console.log('  POST   /message  {"user","text"}');
-  console.log('  POST   /clear    (limpiar chat)');
   console.log('  GET    /gmail/auth/login        (OAuth inicio)');
   console.log('  GET    /gmail/auth/callback     (OAuth callback)');
   console.log('  POST   /gmail/send              {"to","subject","message"}');

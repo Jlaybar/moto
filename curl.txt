@@ -10,7 +10,7 @@ pip install -r requirements.txt
 python db_sqlite3_api.py
 
 
-curl -sS "http://localhost:5000/db/tables?db=dev.db"
+curl -sS "http://localhost:5000/db/tables?db=data/dev.db"
 
 curl -sS "http://localhost:5000/db/tables"
 

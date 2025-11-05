@@ -11,7 +11,7 @@ import re
 
 # Helpers para mensajes
 try:
-    from fun_mensaje import ensure_schema, insert_mensaje, EMAIL_RE
+    from utils.fun_mensaje import ensure_schema, insert_mensaje, EMAIL_RE
 except Exception:
     # Si no existe el helper aún, definimos un regex básico para no romper import
     ensure_schema = None
@@ -161,3 +161,4 @@ if __name__ == "__main__":
         port=Config.API_PORT,
         reload=True  # Solo para desarrollo
     )
+
