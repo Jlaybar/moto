@@ -13,7 +13,8 @@ from bokeh.transform import linear_cmap, factor_cmap
 from bokeh.palettes import Blues256, Pastel1, Pastel2
 from bokeh.layouts import column
 
-from db_sqlite3_api  import db_read_dict
+# Import relativo para resolver correctamente dentro del paquete `utils`
+from .db_sqlite3_api import db_read_dict
 
 import warnings
 warnings.filterwarnings("ignore", message=".*CDSView.source is no longer needed.*")
@@ -864,4 +865,3 @@ if (filt_y) {
         show(column(*controls, p))
     else:
         show(p)
-
