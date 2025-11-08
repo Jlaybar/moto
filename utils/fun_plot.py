@@ -1,4 +1,6 @@
-﻿import numpy as np
+﻿import os
+import json
+import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 
@@ -19,6 +21,51 @@ from .db_sqlite3_api import db_read_dict
 import warnings
 warnings.filterwarnings("ignore", message=".*CDSView.source is no longer needed.*")
 warnings.filterwarnings("ignore", message=".*CDSView.filters was deprecated.*")
+
+
+def plot_elasticity_price_km (marca: str, modelo: str, path_model: str,  graf: str='year'):
+    # -----------------------------------------------------------------
+    # Paso 06 - Graficado
+    #-----------------------------------------------------------------
+
+    print("ℹ️ Paso 06 - Graficado")
+
+    graf = (graf or "").strip().lower()
+    opciones = {"year", "prov", "db"}
+    if graf not in opciones:
+        print(f"❌ Opción de grafico invalida: {graf!r}. Usa {sorted(opciones)}.")
+        return
+    # -----------------------------------------------------------------
+    # Paso 01 - Lectura del archivo JSON (solo si aplica)
+    # -----------------------------------------------------------------
+    path_modelo=f'{path_model}/{marca}/{modelo}.json'
+    model_json = None
+    if graf in {"year", "prov"}:
+        if not os.path.exists(path_modelo):
+            print(f"❌ No se encontró el archivo JSON en la ruta: {path_modelo}")
+            return
+        try:
+            with open(path_modelo, "r", encoding="utf-8") as f:
+                model_json = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"❌ Error al decodificar el JSON ({path_modelo}): {e}")
+            return
+        except Exception as e:
+            print(f"❌ Error al leer el archivo '{path_modelo}': {e}")
+            return
+
+
+    print(f'ℹ️ Paso 05 - Graficado')
+    if graf=='year':
+
+        plot_price_km_by_year_json(model_json, marca, modelo)
+    if graf=='prov':
+        plot_price_km_by_province_json(model_json, marca, modelo)
+    if graf=='db':
+        plot_price_km_db(marca,modelo)
+
+
+    return 
 
 
 
@@ -331,7 +378,7 @@ if (filt_y) {
 def plot_price_km_by_year_json(model_json, marca, modelo):
     import math
     try:
-        from catalog.dict_prov import dict_prov
+        from dict.dict_prov import dict_prov
     except Exception:
         dict_prov = {}
     try:
@@ -588,7 +635,7 @@ if (val === 'Todos') {
 def plot_price_km_by_province_json(model_json, marca, modelo):
     import math
     try:
-        from catalog.dict_prov import dict_prov
+        from dict.dict_prov import dict_prov
     except Exception:
         dict_prov = {}
     try:
