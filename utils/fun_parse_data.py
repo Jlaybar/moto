@@ -331,9 +331,9 @@ def get_items_json (marca, modelo) -> int:
 
 
 
-def get_num_pages (marca, modelo) -> int:
+def get_num_pages (marca, modelo,path) -> int:
 
-    PATH_ROW = f"data/raw/{marca}/{modelo}"
+    PATH_ROW = f"{path}/{marca}/{modelo}"
 
     print("Path:", repr(PATH_ROW))
     p = Path(PATH_ROW)
@@ -399,10 +399,10 @@ def remove_duplicates_from_json(data ):
 
 
 
-def get_dict_marca ( marca: str):
+def get_dict_marca ( marca: str, path_dict: str, path_data:str):
 
      # Nombre del archivo de salida
-    file_path = f"dict/dict_{marca}.py"
+    file_path = f"{path_dict}/dict_{marca}.py"
 
     # ✅ Comprobar si ya existe
     if os.path.exists(file_path):
@@ -410,7 +410,7 @@ def get_dict_marca ( marca: str):
         return
 
 
-    PATH_ROW = f"data/raw/{marca}/tmp"
+    PATH_ROW = f"{path_data}/{marca}/tmp"
     p = Path(PATH_ROW)
     files_json = []
     if p.is_file() or p.suffix.lower() == '.json':
@@ -467,9 +467,3 @@ def get_dict_marca ( marca: str):
 
     print(f"✅ Diccionario de modelos de marca guardado en: {file_path}")
     return 
-
-
-
-
-#if __name__ == "__main__":
-#    main()
