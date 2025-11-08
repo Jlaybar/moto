@@ -31,7 +31,7 @@ def build_models_index(root: str | os.PathLike = "data/model") -> List[Dict[str,
     return index
 
 
-def save_models_index(out_path: str | os.PathLike, root: str | os.PathLike = "data/model") -> Path:
+def save_models_index(out_path: str | os.PathLike, root: str | os.PathLike ) -> Path:
     """
     Construye el índice y lo guarda como JSON pretty en `out_path`.
     Devuelve la ruta escrita.
@@ -41,14 +41,16 @@ def save_models_index(out_path: str | os.PathLike, root: str | os.PathLike = "da
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    print(f'ℹ️ Paso 05 -  Generacion del indice')
+    print(f"Índice generado: {out_path}")
     return out
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Genera índice de marcas/modelos desde data/model")
-    parser.add_argument("--root", default="data/model", help="Directorio raíz (por defecto data/model)")
+    parser = argparse.ArgumentParser(description="Genera índice de marcas/modelos desde ")
+    parser.add_argument("--root", default="data/model", help="Directorio raíz ")
     parser.add_argument("--out", default="data/models_index.json", help="Fichero de salida JSON")
     args = parser.parse_args()
 

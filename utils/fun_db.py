@@ -212,3 +212,5 @@ def insert_motos_from_json(items_json, marca: str, modelo: str, db_path: str=SQL
         return {"inserted": inserted, "updated": updated, "skipped": skipped, "total": len(rows) + skipped}
     finally:
         conn.close()
+    
+        return
