@@ -309,6 +309,9 @@ const toast = (msg, type='success') => {
   el._t = setTimeout(()=>{ el.classList.remove('show') }, 2600);
 };
 
+// Backend FastAPI host (puerto 5000)
+const API = (window.__API_HOST || 'http://localhost:5000');
+
 /* --------- lógica de secciones (acordeón) --------- */
 const sections = {
   moto: {btn: qs('#btn-moto'),  panel: qs('#sec-moto')},
@@ -336,9 +339,9 @@ Object.entries(sections).forEach(([key, {btn}])=>{
 });
 
 /* --------- validación y envío simulado --------- */
-function handleSubmit(formId, buildPayload){
+function handleSubmit(formId, buildPayload, onValid){
   const form = qs('#'+formId);
-  form.addEventListener('submit', (e)=>{
+  form.addEventListener('submit', async (e)=>{
     e.preventDefault();
     if(!form.checkValidity()){
       // Forzar estilos nativos de validación
@@ -347,10 +350,18 @@ function handleSubmit(formId, buildPayload){
       return;
     }
     const payload = buildPayload(new FormData(form));
-    // Aquí podrías hacer fetch('/api', { method:'POST', body: JSON.stringify(payload) })
-    console.log('Payload '+formId, payload);
-    toast('Información enviada correctamente.');
-    form.reset();
+    try{
+      if (typeof onValid === 'function') {
+        await onValid(payload, form);
+      } else {
+        console.log('Payload '+formId, payload);
+        toast('Información enviada correctamente.');
+        form.reset();
+      }
+    } catch(err){
+      console.error(err);
+      toast('Ocurrió un error procesando el formulario.', 'error');
+    }
   });
 }
 
@@ -358,7 +369,39 @@ handleSubmit('form-moto', (fd)=>({
   tipo: 'moto',
   marca: fd.get('marca')?.trim(),
   modelo: fd.get('modelo')?.trim()
-}));
+}), async (payload, form)=>{
+  const marcaTxt = (payload.marca || '').trim();
+  const modeloTxt = (payload.modelo || '').trim();
+  if (!marcaTxt || !modeloTxt){
+    toast('Marca y modelo son obligatorios.', 'error');
+    return;
+  }
+  toast('Verificando marca/modelo…');
+  // 1) Resolver marca → slug
+  const r1 = await fetch(`${API}/api/moto/marca?MARCA=${encodeURIComponent(marcaTxt)}`, { cache: 'no-cache' });
+  let d1 = {};
+  try { d1 = await r1.json(); } catch {}
+  const marcaSlug = d1?.marca;
+  if (!r1.ok || !marcaSlug || marcaSlug === 'No existe'){
+    toast(`Marca no encontrada: "${marcaTxt}"`, 'error');
+    return;
+  }
+  // 2) Resolver modelo para la marca
+  const r2 = await fetch(`${API}/api/moto/modelo?marca=${encodeURIComponent(marcaSlug)}&MODELO=${encodeURIComponent(modeloTxt)}`, { cache: 'no-cache' });
+  let d2 = {};
+  try { d2 = await r2.json(); } catch {}
+  const modeloSlug = d2?.modelo;
+  if (!r2.ok || !modeloSlug || modeloSlug === 'No existe'){
+    toast(`Modelo no encontrado para ${marcaSlug}: "${modeloTxt}"`, 'error');
+    return;
+  }
+  toast(`OK · Marca: ${marcaSlug} · Modelo: ${modeloSlug}`);
+  // Redirigir a la página de modelo con marca/modelo preseleccionados
+  setTimeout(() => {
+    window.location.href = `/modelo?marca=${encodeURIComponent(marcaSlug)}&modelo=${encodeURIComponent(modeloSlug)}`;
+  }, 350);
+  form.reset();
+});
 
 handleSubmit('form-casa', (fd)=>({
   tipo: 'casa',

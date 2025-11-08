@@ -4,36 +4,14 @@
 ### List available models (OpenAI passthrough)
 GET {{host}}/models/chatgpt
 
-### Error de modelo
-POST {{host}}/api/moto/elasticity
-Content-Type: application/json
+### Resolver marca (ok)
+GET {{host}}/api/moto/marca?MARCA=Honda
 
-{
-  "marca": "error",
-  "modelo": "x-adv",
-  "delete_json": 0
-}
+### Resolver marca (no existe)
+GET {{host}}/api/moto/marca?MARCA=MarcaInexistente
 
-### Error de marca
-POST {{host}}/api/moto/elasticity
-Content-Type: application/json
+### Resolver modelo (ok)
+GET {{host}}/api/moto/modelo?marca=honda&MODELO=x-adv
 
-{
-  "marca": "bmw",
-  "modelo": "t-max 530",
-  "delete_json": 0
-}
-
-
-### Same call with explicit paths (optional)
-POST {{host}}/api/moto/elasticity
-Content-Type: application/json
-
-{
-  "marca": "honda",
-  "modelo": "x-adv",
-  "delete_json": 0,
-  "path_dict": "dict/moto",
-  "path_data": "data/moto/raw",
-  "path_model": "data/moto/model"
-}
+### Resolver modelo (no existe para la marca)
+GET {{host}}/api/moto/modelo?marca=bmw&MODELO=t-max%20530

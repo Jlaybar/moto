@@ -149,59 +149,35 @@ async def list_models():
         raise HTTPException(status_code=500, detail=f"Error al obtener modelos: {str(e)}")
 
 # ----------------------------------------------------
-#        Moto: construir/actualizar modelo (elasticidad)
+#        Moto: resolver marca y modelo
 # ----------------------------------------------------
 try:
-    from utils.fun_main import get_moto_elasticity, get_moto_marca_modelo
+    from utils.fun_main import get_moto_marca, get_moto_modelo
 except Exception:
-    get_moto_elasticity = None
-    get_moto_marca_modelo = None
+    get_moto_marca = None
+    get_moto_modelo = None
 
-class MotoElasticityIn(BaseModel):
-    marca: str
-    modelo: str
-    delete_json: int | bool = 0
-    # Permitir rutas personalizadas opcionales
-    path_dict: str | None = None
-    path_data: str | None = None
-    path_model: str | None = None
-
-@app.post("/api/moto/elasticity")
-async def api_moto_elasticity(payload: MotoElasticityIn):
-    if get_moto_elasticity is None or get_moto_marca_modelo is None:
+@app.get("/api/moto/marca")
+async def api_moto_marca(MARCA: str):
+    if get_moto_marca is None:
         raise HTTPException(status_code=500, detail="Módulo moto no disponible")
-
-    # Rutas por defecto dentro del repo
-    path_dict = payload.path_dict or os.path.join("dict", "moto")
-    path_data = payload.path_data or os.path.join("data", "moto", "raw")
-    path_model = payload.path_model or os.path.join("data", "moto", "model")
-
     try:
-        # Resolver slugs de marca/modelo antes de ejecutar
-        marca_slug, modelo_slug = get_moto_marca_modelo(payload.marca, payload.modelo, path_dict, path_data)
-        if marca_slug == 'No existe' or modelo_slug == 'No existe':
-            raise HTTPException(status_code=404, detail="Marca o modelo no encontrados en diccionario")
-
-        # Ejecutar pipeline (descarga → parseo → model_json → índice)
-        get_moto_elasticity(payload.marca, payload.modelo, path_dict, path_data, path_model, int(bool(payload.delete_json)))
-
-        # Comprobar resultado
-        model_path = os.path.join(path_model, marca_slug, f"{modelo_slug}.json")
-        exists = os.path.exists(model_path)
-        return {
-            "ok": True,
-            "marca": payload.marca,
-            "modelo": payload.modelo,
-            "marca_slug": marca_slug,
-            "modelo_slug": modelo_slug,
-            "model_path": model_path,
-            "exists": exists,
-        }
-    except HTTPException:
-        raise
+        marca = get_moto_marca(MARCA)
+        return {"input": MARCA, "marca": marca}
     except Exception as e:
-        logger.exception("Fallo en /api/moto/elasticity")
-        raise HTTPException(status_code=500, detail=f"Error al construir modelo: {e}")
+        raise HTTPException(status_code=500, detail=f"Error resolviendo marca: {e}")
+
+@app.get("/api/moto/modelo")
+async def api_moto_modelo(marca: str, MODELO: str):
+    if get_moto_modelo is None:
+        raise HTTPException(status_code=500, detail="Módulo moto no disponible")
+    try:
+        modelo = get_moto_modelo(marca, MODELO)
+        return {"marca": marca, "input": MODELO, "modelo": modelo}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error resolviendo modelo: {e}")
+
+ 
 
 if __name__ == "__main__":
     import uvicorn

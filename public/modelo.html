@@ -473,10 +473,22 @@
 
       document.getElementById('cargar').addEventListener('click', cargar);
       $marca.addEventListener('change', updateModelOptions);
-      // Carga inicial: poblar marcas, luego modelos, luego cargar
+      // Carga inicial: poblar marcas, aplicar query params si existen, luego cargar
       (async () => {
+        const params = new URLSearchParams(window.location.search || '');
+        const qMarca = (params.get('marca') || '').trim().toLowerCase();
+        const qModelo = (params.get('modelo') || '').trim().toLowerCase();
         await populateBrands();
+        if (qMarca) {
+          // si la marca existe en el select, usarla
+          const has = [...$marca.options].some(o => String(o.value).toLowerCase() === qMarca);
+          if (has) $marca.value = qMarca;
+        }
         await updateModelOptions();
+        if (qModelo) {
+          const hasM = [...$modelo.options].some(o => String(o.value).toLowerCase() === qModelo);
+          if (hasM) $modelo.value = qModelo;
+        }
         await cargar();
       })();
     </script>

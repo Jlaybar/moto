@@ -8,41 +8,53 @@ from .fun_db import *
 
 from .fun_model_index import save_models_index
 
-
-def get_moto_marca_modelo (MARCA: str, 
-                           MODELO: str, 
-                           path_dict:str,
-                           path_data:str
-                           ):
-
+def get_moto_marca  (MARCA: str, 
+                     path_dict:str='dict/moto/',
+                     path_data:str='data/moto/raw'
+                     ):
     # -----------------------------------------------------------------
-    # Paso 01-  Creamos el Dicionario  
+    # Paso 01-  Creamos el Dicionario  MARCA y MODELOS
     #-----------------------------------------------------------------
     # Extracion de la marca
+    print(f'ℹ️ Paso 01-  Extraccion del marca')
     marca='No existe'
-    modelo='No existe'
     dict_marca = load_dict('marca', path_dict)
     dict_marca_filter =filter_dict(dict_marca, MARCA)
     marca, marca_des = get_dict_position(dict_marca_filter)
 
     if marca =='No existe' :
         print(f"❌ El marca: {MARCA} no exite ")
-        return marca,modelo
+        return marca
         
-
     get_moto_apify_dict (marca, path_data)
     get_dict_marca (marca, path_dict, path_data)
+
+    print(f"✅marca: {marca} ")
+
+    return marca 
+
+def get_moto_modelo (marca: str, 
+                     MODELO: str, 
+                     path_dict:str='dict/moto/'
+                    ):
     
     # Extracion del modelo 
+    print(f'ℹ️ Paso 01-  Extraccion del modelo')
+    modelo='No existe'
+    if marca =='No existe' :
+        print(f"❌ No se puede encontrar el  modelo: {MODELO} ")
+        return
     dict_modelo = load_dict(marca, path_dict)
     dict_modelo_filter =filter_dict(dict_modelo, MODELO)
     modelo, modelo_des = get_dict_position(dict_modelo_filter)
 
     if modelo =='No existe' :
         print(f"❌ El modelo: {MODELO} no exite")
-        return marca,modelo
-        
-    return marca,modelo
+        return modelo
+    
+    print(f"✅modelo: {modelo} ")
+    return modelo
+
 
 
 def get_moto_data (marca: str, 
@@ -198,7 +210,9 @@ def get_moto_elasticity (MARCA: str,
     #-----------------------------------------------------------------
     # Extracion de la marca
     
-    marca, modelo = get_moto_marca_modelo(MARCA,MODELO,path_dict,path_data)
+    marca  = get_moto_marca  (MARCA,path_dict,path_data)
+
+    modelo = get_moto_modelo (marca, MODELO, path_dict)
 
     if (marca =='No existe') or (modelo =='No existe'):
         return
