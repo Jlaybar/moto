@@ -1,0 +1,34 @@
+[
+  {
+    "marca": "bmw",
+    "modelos": [
+      "f_900_r",
+      "k_1600_b"
+    ]
+  },
+  {
+    "marca": "ducati",
+    "modelos": [
+      "monster_696"
+    ]
+  },
+  {
+    "marca": "honda",
+    "modelos": [
+      "forza_750",
+      "x-adv"
+    ]
+  },
+  {
+    "marca": "triumph",
+    "modelos": [
+      "thruxton"
+    ]
+  },
+  {
+    "marca": "yamaha",
+    "modelos": [
+      "t-max_530"
+    ]
+  }
+]

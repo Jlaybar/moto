@@ -6,7 +6,7 @@ import os
 from typing import Any, Dict
 
 
-SQLITE_PATH = os.getenv('DB_FILE_PATH', 'dev.db')
+SQLITE_PATH = os.getenv('DB_FILE_PATH', 'data/dev.db')
 
 # DDL solo se ejecuta si no existe la tabla
 DDL = """
@@ -212,3 +212,5 @@ def insert_motos_from_json(items_json, marca: str, modelo: str, db_path: str=SQL
         return {"inserted": inserted, "updated": updated, "skipped": skipped, "total": len(rows) + skipped}
     finally:
         conn.close()
+    
+        return

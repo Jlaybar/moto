@@ -14,8 +14,6 @@ const __dirname = path.dirname(__filename);
 
 // Prisma/DB bootstrap removed. Node only serves chat/Gmail.
 
-// SSE clients
-const CLIENTS = new Set();
 const app = express();
 // Prisma client removed
 
@@ -29,6 +27,9 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: '1mb' }));
+// Estáticos: servir /public y /data
+app.use('/public', express.static(path.join(__dirname, '..', 'public')));
+app.use('/data', express.static(path.join(__dirname, '..', 'data')));
 // ----------------------------------------------------
 //          SERVICIO GMAIL INI 
 // ----------------------------------------------------
@@ -200,50 +201,6 @@ app.get('/gmail/messages/:id', async (req, res) => {
 app.get('/gmail/me', (req, res) => {
   res.json({ authenticated: Boolean(req.session.tokens) });
 });
-// ----------------------------------------------------
-//          SERVICIO CHAT
-// ----------------------------------------------------
-
-// Health
-app.get('/healthz', (req, res) => {
-  res.json({ ok: true });
-});
-
-// SSE stream
-app.get('/events', (req, res) => {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive'
-  });
-  res.write(`data: ${JSON.stringify({ type: 'system', text: 'Conectado al stream de chat' })}\n\n`);
-  CLIENTS.add(res);
-  const heartbeat = setInterval(() => { try { res.write(': ping\n\n'); } catch {} }, 30000);
-  req.on('close', () => { clearInterval(heartbeat); CLIENTS.delete(res); });
-});
-
-function broadcast(payload) {
-  for (const client of CLIENTS) {
-    try { client.write(`data: ${JSON.stringify(payload)}\n\n`); }
-    catch { try { client.end(); } catch {} CLIENTS.delete(client); }
-  }
-}
-
-// Chat message
-app.post('/message', (req, res) => {
-  const user = req.body?.user ? String(req.body.user).slice(0, 32) : 'anon';
-  const text = req.body?.text ? String(req.body.text).slice(0, 1000) : '';
-  if (!text.trim()) return res.status(400).json({ error: 'text requerido' });
-  const msg = { type: 'message', user, text, ts: Date.now() };
-  broadcast(msg);
-  res.status(202).json({ ok: true });
-});
-
-// Clear chat
-app.post('/clear', (req, res) => {
-  broadcast({ type: 'clear' });
-  res.status(202).json({ ok: true });
-});
 
 // DB endpoints removed. Use Flask service on port 5000 for DB APIs.
 
@@ -280,27 +237,40 @@ app.get('/api/model/:marca/:modelo', (req, res) => {
   }
 });
 
-app.get('/api/plot_price_km_by_year_json', (req, res) => {
+// Ruta legacy eliminada: /api/plot_price_km_by_year_json (usar /api/model/:marca/:modelo)
+
+// Índice de modelos estimados: devuelve data/model/models_index.json (o fallback a data/models_index.json)
+app.get('/api/models_index', (req, res) => {
   try {
-    const { marca, modelo } = req.query;
-    const filePath = resolveModelPath(marca, modelo);
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'not found' });
+    const filePath = path.join(__dirname, '..', 'data', 'model', 'models_index.json');
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'models index not found' });
     res.sendFile(filePath);
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'failed to read model json' });
+    res.status(500).json({ error: 'failed to read models index' });
   }
 });
 
-// Serve index: prefer public/index.html, fallback to docs/index.html
+// Serve index: preferir public/index.html; fallback a docs/index.html
 app.get(['/', '/index.html'], (req, res) => {
   const publicIndex = path.join(__dirname, '..', 'public', 'index.html');
+  if (fs.existsSync(publicIndex)) return res.sendFile(publicIndex);
   const docsIndex = path.join(__dirname, '..', 'docs', 'index.html');
-  // Preferimos docs/index.html (versión de gráfico) para evitar inconsistencias
-  let filePath = docsIndex;
-  if (!fs.existsSync(docsIndex) && fs.existsSync(publicIndex)) filePath = publicIndex;
-  if (fs.existsSync(filePath)) res.sendFile(filePath);
-  else res.status(404).send('index.html no encontrado');
+  if (fs.existsSync(docsIndex)) return res.sendFile(docsIndex);
+  return res.status(404).send('index.html no encontrado');
+});
+
+// Serve modelo.html desde /modelo y /modelo.html
+app.get(['/modelo', '/modelo.html'], (req, res) => {
+  const page = path.join(__dirname, '..', 'public', 'modelo.html');
+  if (fs.existsSync(page)) return res.sendFile(page);
+  return res.status(404).send('public/modelo.html no encontrado');
+});
+
+// Ruta a mensaje: redirige al servicio Python (puerto 5000)
+app.get(['/mensaje', '/mensaje.html'], (req, res) => {
+  const target = `http://localhost:5000/public/mensaje.html`;
+  return res.redirect(target);
 });
 
 // Página de chat SSE clásica en /chat
@@ -318,10 +288,6 @@ app.use((req, res) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Chat backend escuchando en http://localhost:${PORT}`);
   console.log('Endpoints:');
-  console.log('  GET    /healthz');
-  console.log('  GET    /events   (SSE stream)');
-  console.log('  POST   /message  {"user","text"}');
-  console.log('  POST   /clear    (limpiar chat)');
   console.log('  GET    /gmail/auth/login        (OAuth inicio)');
   console.log('  GET    /gmail/auth/callback     (OAuth callback)');
   console.log('  POST   /gmail/send              {"to","subject","message"}');

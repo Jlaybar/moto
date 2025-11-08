@@ -9,10 +9,10 @@ from apify_client import ApifyClient
 
 
 
-def get_apify_data (marca, modelo, num_paginas=1,  exe=1):
+def get_moto_apify_data (marca, modelo, num_paginas, path, exe=1):
     # Aquí puedes implementar cualquier lógica adicional si es necesario
-    # Comprobar si ya existe el archivo data/<marca>/<modelo>.json
-    json_path = os.path.join("data", "raw", str(marca), f"{modelo}.json")
+    # Comprobar si ya existe el archivo data/source/moto/<marca>/<modelo>.json
+    json_path = os.path.join(path, str(marca), f"{modelo}.json")
 
     if num_paginas==0:
         delete_json_file(marca,modelo,num_paginas)
@@ -76,22 +76,22 @@ def get_apify_data (marca, modelo, num_paginas=1,  exe=1):
         # Ahora 'result' contiene todos los elementos como objetos JSON
         print(f"Se guardaron {len(result)} elementos en la variable 'result'")
 
-        # Crear el directorio si no existe (data/<marca>)
-        ruta_directorio = f"data/raw/{marca}"
+        # Crear el directorio si no existe (data/source/moto/<marca>)
+        ruta_directorio = f"{path}/{marca}"
         os.makedirs(ruta_directorio, exist_ok=True) 
         # Guardar en archivo JSON
-        with open(f'data/raw/{marca}/{modelo}.json', 'w', encoding='utf-8') as f:
+        with open(f'{path}/{marca}/{modelo}.json', 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
 
-        print(f"✅ Datos guardados en :data/raw/{marca}/{modelo}.json ")
+        print(f"✅ Datos guardados en :{path}/{marca}/{modelo}.json ")
 
 
     return 
 
 
-def get_apify_dict (marca, exe=1):
+def get_moto_apify_dict (marca,path, exe=1):
     # Aquí puedes implementar cualquier lógica adicional si es necesario
-    # Comprobar si ya existe el archivo data/<marca>/<modelo>.json
+    # Comprobar si ya existe el archivo data/source/moto/<marca>/<modelo>.json
 
     APIFY_API_TOKEN = os.getenv('APIFY_API_TOKEN')
  
@@ -130,8 +130,7 @@ def get_apify_dict (marca, exe=1):
         "verboseLog": True
     }
     
-    json_path = os.path.join("data", "raw", str(marca), "tmp.json")
-    os.path.join("data", "raw", str(marca), f"tmp.json")
+    json_path = os.path.join(path, str(marca), "tmp.json")
     if os.path.isfile(json_path):
         exe = 0
         print(f"✅ El archivo {json_path} ya existe. No se ejecutará el Actor.")
@@ -149,24 +148,23 @@ def get_apify_dict (marca, exe=1):
         # Ahora 'result' contiene todos los elementos como objetos JSON
         print(f"Se guardaron {len(result)} elementos en la variable 'result'")
 
-        # Crear el directorio si no existe (data/<marca>)
-        ruta_directorio = f"data/raw/{marca}"
-        os.makedirs(ruta_directorio, exist_ok=True) 
+        # Crear el directorio si no existe (data/source/moto/<marca>)
+        os.makedirs(f"{path}/{marca}", exist_ok=True) 
         # Guardar en archivo JSON
-        with open(f'data/raw/{marca}/tmp.json', 'w', encoding='utf-8') as f:
+        with open(f"{path}/{marca}/tmp.json", 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
 
-        print(f"✅ Datos guardados en :data/raw/{marca}/tmp.json ")
+        print(f"✅ Datos guardados en :{path}/{marca}/tmp.json ")
 
 
     return 
 
 
-def delete_json_file(marca, modelo, num_paginas):
+def delete_json_file(marca, modelo, num_paginas, path):
     import os
     import json
 
-    json_path = os.path.join("data", "raw", str(marca), f"{modelo}.json")
+    json_path = os.path.join(path, str(marca), f"{modelo}.json")
 
     if os.path.isfile(json_path):
         try:
@@ -190,77 +188,3 @@ def delete_json_file(marca, modelo, num_paginas):
 
     return
 
-
-def filter_dict(d: dict, text: str) -> dict:
-    """
-    Busca coincidencias en claves o valores del diccionario.
-    Equivale a: SELECT * FROM dict WHERE key LIKE '%palabra1%' AND key LIKE '%palabra2%' ...
-    o value LIKE '%palabraX%'
-    No distingue mayúsculas/minúsculas.
-    """
-    # Convertir a minúsculas y dividir en palabras
-    palabras = text.lower().split()
-
-    result = {}
-    for k, v in d.items():
-        k_lower = k.lower()
-        v_lower = v.lower()
-
-        # Verifica que TODAS las palabras estén en la clave o en el valor
-        if all(p in k_lower or p in v_lower for p in palabras):
-            result[k] = v
-
-    print(f"🔎 {len(result)} coincidencia(s) encontradas con '{text}':")
-    for k, v in result.items():
-        print(f"   • {k} → {v}")
-
-    return result
-
-
-
-def load_dict(name_dict: str):
-    """
-    Carga dinámicamente el diccionario de modelos de una marca desde /dict.
-    Ejemplo: load_dict_marca("bmw") → dict_bmw
-    """
-    module_name = f"dict.dict_{name_dict.lower()}"   # ruta del módulo
-    var_name = f"dict_{name_dict.lower()}"    # nombre de la variable dentro
-
-    try:
-        # Comprobar si existe el archivo
-        file_path = os.path.join("dict", f"dict_{name_dict.lower()}.py")
-        if not os.path.exists(file_path):
-            print(f"❌ No se encontró el archivo {file_path}")
-            return None
-
-        # Importar el módulo dinámicamente
-        module = importlib.import_module(module_name)
-
-        # Obtener la variable del módulo
-        if hasattr(module, var_name):
-            diccionario = getattr(module, var_name)
-            print(f"✅ Diccionario '{var_name}' cargado correctamente ({len(diccionario)} elementos).")
-            return diccionario
-        else:
-            print(f"⚠️ El módulo {module_name} no contiene la variable '{var_name}'.")
-            return None
-
-    except Exception as e:
-        print(f"❌ Error al cargar el diccionario de '{name_dict}': {e}")
-        return None
-
-
-def get_dict_position(data: dict, i: int=0):
-# Convertir a listas
-    keys = list(data.keys())
-    values = list(data.values())
-    # Acceder al primer elemento (clave) y su valor
-    if len(data) > 0:
-        valor = keys[i]
-        clave = values[i]
-        # print("clave:", clave)
-        # print("valor:",valor)
-    else:
-         clave ='No existe'
-         valor = ''
-    return  clave, valor 

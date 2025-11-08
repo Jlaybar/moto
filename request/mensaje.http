@@ -1,0 +1,19 @@
+### Página de mensaje (HTML vía Node)
+GET http://localhost:3000/mensaje
+
+### Página de mensaje (HTML directo Python)
+GET http://localhost:5000/public/mensaje.html
+
+### API Mensajes - Crear (POST)
+POST http://localhost:5000/api/mensajes
+Content-Type: application/json
+
+{
+  "correo": "usuario{{$timestamp}}@example.com",
+  "asunto": "Solicitud de información {{$datetime rfc1123}}",
+  "body": "Hola, me interesa recibir información adicional sobre el producto. Gracias."
+}
+
+### API Salud (opcional, para verificar servicio)
+GET http://localhost:5000/api/health
+

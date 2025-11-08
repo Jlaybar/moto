@@ -29,7 +29,7 @@
       .title small { opacity: .8; }
       .eq { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity: .85; font-size: 12px; }
       .chart-box{
-        width: 100%;
+        width: min(900px, 98vw);
         aspect-ratio: 3 / 2; /* 900x600 */
         padding: 6px 6px 0;
         min-height: 360px; /* Fallback para evitar alto 0 */
@@ -45,7 +45,6 @@
       .sidecard{ padding:8px; display:flex; flex-direction:column; gap:10px; align-items:center; }
       .side-title{ font-size:14px; color:var(--text); text-align:center; opacity: .9; }
       .grad-wrap{ position:relative; flex:1; width:100%; min-height:120px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,.1); background: #0b1328; }
-      /* Gradiente vertical invertido: azul arriba → blanco abajo */
       .grad{ position:absolute; inset:0; background: linear-gradient(to bottom, #1e3a8a, #ffffff); opacity: .85; }
       .ticks{ position:absolute; inset:8px; display:flex; flex-direction:column; justify-content:space-between; font-size:11px; color:#f1f5f9; font-weight:600; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
       .tick{ text-align:center; }
@@ -72,7 +71,7 @@
       <div class="panel">
         <div class="title">
           <div class="left">
-            <h2>Relación Precio vs Kilmetros</h2>
+            <h2>Relación Precio vs Kilometros</h2>
             <small id="mm">-</small>
           </div>
           <div class="eq" id="eq"></div>
@@ -120,6 +119,7 @@
       const $msg = document.getElementById('msg');
       const canvas = document.getElementById('chart');
       let chart = null;
+
       // --- Carga dinámica de modelos por marca ---
       let MODELS_INDEX_CACHE = null;
       async function loadModelsIndex(){
@@ -138,7 +138,7 @@
               return MODELS_INDEX_CACHE;
             }
           } catch (e) {
-            // siguiente intento
+            // ignore and try next
           }
         }
         MODELS_INDEX_CACHE = [];
@@ -156,6 +156,7 @@
           opt.textContent = labelFn ? labelFn(v) : v;
           selectEl.appendChild(opt);
         }
+        // Selección prioritaria: mantener actual, luego preferred, luego primera
         const setTo = values.includes(current) ? current : (preferred && values.includes(preferred) ? preferred : (values[0] || ''));
         if (setTo) selectEl.value = setTo;
       }
@@ -172,10 +173,11 @@
       async function populateBrands(){
         const index = await loadModelsIndex();
         const brands = index.map(e => e.marca).filter(Boolean);
+        // Intenta mantener el valor actual o por defecto 'honda'
         if (brands.length === 0) {
-          fillSelect($marca, ['honda'], 'honda');
+          fillSelect($marca, ['honda'], 'honda', labelBrand);
         } else {
-        fillSelect($marca, brands, 'honda', labelBrand);
+          fillSelect($marca, brands, 'honda', labelBrand);
         }
       }
 
@@ -184,6 +186,7 @@
         const index = await loadModelsIndex();
         const entry = index.find(e => norm(e.marca) === brand);
         const models = entry ? (entry.modelos || []) : [];
+        // Intenta mantener el modelo actual o por defecto 'x-adv'
         if (models.length === 0) {
           fillSelect($modelo, ['x-adv'], 'x-adv', labelModel);
         } else {
@@ -212,8 +215,7 @@
 
       function yearColor(y, low, high){
         if (y == null || isNaN(low) || isNaN(high) || high <= low) return '#3b82f6';
-        // const t = (y - low) / (high - low); // 0..1
-        const t = (high - y) / (high - low); 
+        const t = (high - y) / (high - low); // invertido: más reciente más oscuro
         const sat = 85 * (1 - t);
         const light = 60 + 35 * t;
         return `hsla(210, ${sat}%, ${light}%, 0.98)`;
@@ -290,9 +292,8 @@
 
         const datasets = [];
 
-        // Banda y curva de ajuste colo blue
+        // Banda y curva de ajuste
         if (fit) {
-          // Añadir bandas en gris atenuado calculadas a partir de los residuals (si existen)
           const residuals = items.map(d => toNumberES(d.residual)).filter(v => Number.isFinite(v));
           let sigma = 0;
           if (residuals.length >= 3) {
@@ -307,18 +308,17 @@
             const z = 1.96;
             const bandHigh = fit.map(p => ({ x: p.x, y: p.y + z * sigma }));
             const bandLow  = fit.map(p => ({ x: p.x, y: p.y - z * sigma }));
-            // Relleno entre High y Low con gris muy tenue
             datasets.push({ label: 'Band High', type: 'line', data: bandHigh, parsing: false, borderColor: 'rgba(0,0,0,0)', pointRadius: 0, tension: 0 });
             datasets.push({ label: 'Band Low',  type: 'line', data: bandLow,  parsing: false, borderColor: 'rgba(0,0,0,0)', pointRadius: 0, tension: 0, fill: { target: '-1' }, backgroundColor: 'rgba(226,232,240,0.10)' });
           }
           datasets.push({ label: 'Ajuste', type: 'line', data: fit, parsing: false, borderColor: blue, borderWidth: 2.5, pointRadius: 0, tension: 0 });
         }
-// Puntos
+
+        // Puntos
         const normalBG  = normal.map(p => p.backgroundColor || '#3b82f6');
         const cholloBG  = chollo.map(p => p.backgroundColor || green);
         const caroBG    = caro.map(p => p.backgroundColor   || red);
         const sinAnnoBG = sinAnno.map(p => p.backgroundColor || grayPoint);
-        // color bordes
         const whiteBordersN = normal.map(() => darkBlue);
         const whiteBordersE = chollo.map(() => '#166534');
         const whiteBordersC = caro.map(() => '#7f1d1d');
@@ -326,8 +326,8 @@
 
         datasets.push(
           { label: 'Normal', data: normal, parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: normalBG, pointBorderColor: whiteBordersN, pointBorderWidth: 1 },
-          { label: 'Barato', data: chollo, parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: cholloBG, pointBorderColor: whiteBordersE, pointBorderWidth: 1 },
-          { label: 'Caro',   data: caro,   parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: caroBG, pointBorderColor: whiteBordersC, pointBorderWidth: 1 },
+          { label: 'Chollo', data: chollo, parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: cholloBG, pointBorderColor: whiteBordersE, pointBorderWidth: 1 },
+          { label: 'Timo',   data: caro,   parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: caroBG, pointBorderColor: whiteBordersC, pointBorderWidth: 1 },
           { label: 'Sin año',data: sinAnno,parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: sinAnnoBG, pointBorderColor: whiteBordersS, pointBorderWidth: 1 }
         );
 
@@ -360,24 +360,7 @@
                 }
               },
               plugins: {
-                legend: { 
-                  labels: { 
-                    color: textColor,
-                    // Oculta selectores de series específicas en la leyenda
-                    filter: (item, chart) => {
-                      try {
-                        const ds = chart?.data?.datasets?.[item.datasetIndex];
-                        const lab = String((ds && ds.label) || item.text || '').toLowerCase();
-                        // Oculta: "Sin año" y "Band Low"
-                        if (lab.includes('sin a')) return false;
-                        if (lab.includes('band low')) return false;
-                        return true;
-                      } catch {
-                        return true;
-                      }
-                    }
-                  }
-                },
+                legend: { labels: { color: textColor } },
                 tooltip: {
                   callbacks: {
                     label(ctx){
@@ -401,19 +384,35 @@
               }
             }
           });
-
-          // Reordenar tooltip: Año, km, precio, provincia, url
-          if (window.chart && window.chart.options && window.chart.options.plugins && window.chart.options.plugins.tooltip && window.chart.options.plugins.tooltip.callbacks) {
-            window.chart.options.plugins.tooltip.callbacks.label = (ctx) => {
-              const p = ctx.raw || {};
-              return [
-                `Año: ${p.year_fmt || '-'}`,
-                `Km: ${p.km_fmt || '-'}`,
-                `Precio: ${p.precio_fmt || '-'}`,
-                `Provincia: ${p.provincia || '-'}`,
-                p.url ? `URL: ${p.url}` : ''
-              ].filter(Boolean);
-            };
+          // Sobrescribe tooltip y leyenda para alinear con docs/index.html
+          if (window.chart && window.chart.options && window.chart.options.plugins) {
+            // Reordenar tooltip
+            if (window.chart.options.plugins.tooltip && window.chart.options.plugins.tooltip.callbacks) {
+              window.chart.options.plugins.tooltip.callbacks.label = (ctx) => {
+                const p = ctx.raw || {};
+                return [
+                  `Año: ${p.year_fmt || '-'}`,
+                  `Km: ${p.km_fmt || '-'}`,
+                  `Precio: ${p.precio_fmt || '-'}`,
+                  `Provincia: ${p.provincia || '-'}`,
+                  p.url ? `URL: ${p.url}` : ''
+                ].filter(Boolean);
+              };
+            }
+            // Ocultar entradas de leyenda "Sin año" y "Band Low"
+            if (window.chart.options.plugins.legend && window.chart.options.plugins.legend.labels) {
+              window.chart.options.plugins.legend.labels.filter = (item, chart) => {
+                try {
+                  const ds = chart?.data?.datasets?.[item.datasetIndex];
+                  const lab = String((ds && ds.label) || item.text || '').toLowerCase();
+                  if (lab.includes('sin a')) return false;
+                  if (lab.includes('band low')) return false;
+                  return true;
+                } catch {
+                  return true;
+                }
+              };
+            }
             try { window.chart.update(); } catch {}
           }
           // Asegurar que el canvas tiene medidas después del layout inicial
@@ -474,7 +473,7 @@
 
       document.getElementById('cargar').addEventListener('click', cargar);
       $marca.addEventListener('change', updateModelOptions);
-      // Carga inicial: marcas → modelos → cargar
+      // Carga inicial: poblar marcas, luego modelos, luego cargar
       (async () => {
         await populateBrands();
         await updateModelOptions();

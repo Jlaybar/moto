@@ -1,312 +1,193 @@
-﻿<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Precio vs Kilómetros</title>
-    <style>
-      :root {
-        --bg: #0b1220;
-        --panel: #0f172a;
-        --panel-2: #111827;
-        --text: #e2e8f0;
-        --accent: #38bdf8;
-      }
-      * { box-sizing: border-box; }
-      html, body { height: 100%; }
-      body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; display: grid; grid-template-rows: auto 1fr; }
-      header { display:flex; align-items:center; gap:12px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid rgba(226,232,240,.08); }
-      header h1 { font-size: 16px; margin: 0; color: var(--text); font-weight: 600; opacity: .95; }
-      .inputs { display:flex; gap:8px; align-items:center; margin-left: auto; }
-      .inputs input { background: #0b1328; color: var(--text); border: 1px solid rgba(226,232,240,.14); border-radius: 6px; padding: 6px 8px; min-width: 140px; }
-      .inputs button { background: var(--accent); color: #06101a; border: 0; border-radius: 6px; padding: 7px 10px; cursor: pointer; font-weight: 600; }
-      .inputs button:hover { filter: brightness(0.96); }
-      main { display: grid; place-items: center; padding: 10px; }
-      .panel { width: min(1200px, 98vw); border: 1px solid rgba(226,232,240,.08); border-radius: 10px; background: linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.86)); padding: 10px; }
-      .title { display:flex; align-items: baseline; justify-content: space-between; padding: 4px 8px 8px; border-bottom: 1px dashed rgba(226,232,240,.1); }
-      .title .left { display:flex; gap:12px; align-items: baseline; }
-      .title h2 { margin: 0; font-size: 15px; font-weight: 700; opacity: .95; }
-      .title small { opacity: .8; }
-      .eq { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity: .85; font-size: 12px; }
-      .chart-box{
-        width: min(900px, 98vw);
-        aspect-ratio: 3 / 2; /* 900x600 */
-        padding: 6px 6px 0;
-        min-height: 360px; /* Fallback para evitar alto 0 */
-      }
-      canvas { display: block; width: 100% !important; height: 100% !important; }
-      .error { color: #fecaca; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); padding: 6px 8px; border-radius: 6px; margin: 8px 0 0; }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  </head>
-  <body>
-    <header>
-      <h1>Precio vs Kilómetros</h1>
-      <div class="inputs">
-        <input id="marca" placeholder="marca (p.ej. honda)" value="honda" />
-        <input id="modelo" placeholder="modelo (p.ej. x-adv)" value="x-adv" />
-        <button id="cargar">Cargar</button>
-      </div>
-    </header>
-    <main>
-      <div class="panel">
-        <div class="title">
-          <div class="left">
-            <h2>Relación Precio vs Kilometros</h2>
-            <small id="mm">-</small>
-          </div>
-          <div class="eq" id="eq"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inicio</title>
+  <style>
+    :root{
+      --bg: #0b1020; /* darker base */
+      --card: #0e1426;
+      --card-2: #0a1020;
+      --muted: #9aa8bf;
+      --text: #e6eef7;
+      --primary: #22d3ee; /* cyan-400 */
+      --primary-2: #06b6d4; /* cyan-500 */
+      --ring: rgba(34,211,238,.45);
+      --glow: 0 0 12px rgba(34,211,238,.45), 0 0 28px rgba(6,182,212,.35), 0 0 48px rgba(6,182,212,.25);
+    }
+    *{ box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
+      color: var(--text);
+      background:
+        radial-gradient(1200px 800px at 10% -10%, #0c1326, transparent 60%),
+        radial-gradient(900px 600px at 90% 10%, rgba(34,211,238,.08), transparent 60%),
+        linear-gradient(180deg, #0a0f1d, var(--bg));
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* Modern header (glass + glow) */
+    header{
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: blur(10px) saturate(120%);
+      background: linear-gradient(to bottom, rgba(10,16,32,.85), rgba(10,16,32,.35));
+      border-bottom: 1px solid rgba(148,163,184,.15);
+    }
+    .container{ max-width: 1100px; margin: 0 auto; padding: 14px 16px; }
+    nav{ display:flex; align-items:center; justify-content:space-between; gap: 16px; }
+    .brand{
+      font-weight: 800; letter-spacing:.4px;
+      background: linear-gradient(90deg, #a5b4fc, #67e8f9, #22d3ee);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      filter: drop-shadow(0 2px 10px rgba(34,211,238,.15));
+    }
+    .links{ display:flex; gap: 10px; }
+    .links a{
+      position: relative;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00));
+      transition: transform .18s ease, color .2s ease, box-shadow .2s ease, border-color .2s ease;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    /* Shine sweep */
+    .links a::before{
+      content: ""; position: absolute; inset: -1px; border-radius: inherit;
+      background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.25) 50%, transparent 60%);
+      transform: translateX(-120%);
+      transition: transform .5s ease;
+      pointer-events: none; z-index: -1;
+    }
+    .links a:hover{
+      color: var(--text);
+      border-color: rgba(34,211,238,.45);
+      box-shadow: var(--glow);
+      transform: translateY(-1px);
+    }
+    .links a:hover::before{ transform: translateX(120%); }
+    .links a:focus-visible{ outline: none; box-shadow: 0 0 0 3px var(--ring), var(--glow); }
+
+    /* Main */
+    main{ display:grid; place-items:center; padding: 32px 16px 56px; }
+    .hero{ display:grid; gap: 24px; width: min(100%, 980px); justify-items:center; text-align:center; }
+    .title{ font-size: clamp(26px, 4vw, 40px); font-weight: 800; letter-spacing:.2px; }
+    .subtitle{ color: var(--muted); max-width: 70ch; }
+
+    /* Neon card frame with animated border */
+    .frame{
+      width: min(100%, 880px);
+      aspect-ratio: 16 / 9;
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      background: radial-gradient(120% 100% at 50% 0%, #0c152b, #0a1020 70%);
+      box-shadow: 0 12px 50px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .frame::before{
+      content:""; position:absolute; inset:-1px; border-radius:26px;
+      background: conic-gradient(from 0deg, rgba(34,211,238,.35), rgba(6,182,212,.25), transparent 40%, transparent 60%, rgba(34,211,238,.35));
+      filter: blur(14px); opacity:.6;
+      animation: spin 10s linear infinite;
+      z-index: 0;
+    }
+    @keyframes spin{ to{ transform: rotate(1turn); } }
+
+    .frame img{ position: relative; z-index: 1; width:100%; height:100%; object-fit:cover; display:block; transition: opacity .6s ease, transform .6s ease; }
+    .fade-out{ opacity: 0; transform: scale(1.02); }
+
+    /* Glowing CTA button */
+    .cta{
+      display:inline-block; margin-top: 6px;
+      background: radial-gradient(120% 120% at 10% 0%, #7dd3fc, #22d3ee 40%, #06b6d4);
+      color:#00151a; font-weight:900; text-decoration:none; letter-spacing:.3px;
+      padding: 12px 22px; border-radius: 999px; border: 0;
+      box-shadow: 0 10px 30px rgba(6,182,212,.28), inset 0 0 0 1px rgba(255,255,255,.18);
+      transition: transform .16s ease, box-shadow .2s ease, filter .2s ease;
+      position: relative; overflow:hidden;
+    }
+    .cta::after{
+      content:""; position:absolute; inset:0; border-radius: inherit; pointer-events:none;
+      background: radial-gradient(60% 80% at 50% -20%, rgba(255,255,255,.45), transparent 55%);
+      mix-blend-mode: overlay; opacity:.6;
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse{ 0%,100%{ opacity:.55; } 50%{ opacity:.85; } }
+    .cta:hover{ transform: translateY(-1px) scale(1.01); box-shadow: var(--glow); filter: saturate(1.06); }
+    .cta:active{ transform: translateY(0) scale(.995); }
+    .cta:focus-visible{ outline:none; box-shadow: 0 0 0 4px var(--ring), var(--glow); }
+
+    footer{ color: #7a8aa1; font-size: 14px; padding: 26px; text-align:center; border-top: 1px solid rgba(148,163,184,.15); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <div class="brand">Mi Sitio</div>
+        <div class="links">
+          <a href="index.html" aria-current="page">Inicio</a>
+          <a href="registro.html">Registro</a>
+          <a href="contacto.html">Contacto</a>
         </div>
-        <div class="chart-box">
-          <canvas id="chart"></canvas>
-        </div>
-        <div id="msg" class="error" style="display:none"></div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1 class="title">Bienvenido 👋</h1>
+      <p class="subtitle">Esta es una página de inicio simple con un cuadro animado que rota imágenes y un botón para comenzar.</p>
+
+      <div class="frame" aria-label="Presentación de imágenes">
+        <img id="slide" src="/data/img/inicio01.jpg" alt="Imagen de inicio" />
       </div>
-    </main>
-    <script>
-      const gridColor = 'rgba(226,232,240,.16)';
-      const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#e2e8f0';
-      const green = '#22c55e';
-      const red = '#ef4444';
-      const blue = '#60a5fa';
-      const grayPoint = '#94a3b8';
 
-      const $marca = document.getElementById('marca');
-      const $modelo = document.getElementById('modelo');
-      const $btn = document.getElementById('cargar');
-      const $mm = document.getElementById('mm');
-      const $eq = document.getElementById('eq');
-      const $msg = document.getElementById('msg');
-      const canvas = document.getElementById('chart');
-      let chart = null;
+      <a class="cta" href="modelo.html">¡Empecemos!</a>
+    </section>
+  </main>
 
-      // --- Helpers de formato / parseo robusto ---
-      function fmtKm(v){
-        const n = toNumberES(v);
-        return Number.isFinite(n) ? n.toLocaleString('es-ES') + ' km' : String(v) + ' km';
-      }
-      function fmtEur(v){
-        const n = toNumberES(v);
-        return Number.isFinite(n) ? n.toLocaleString('es-ES') + ' €' : String(v) + ' €';
-      }
-      function toNumberES(v){
-        if (v == null) return NaN;
-        if (typeof v === 'number' && Number.isFinite(v)) return v;
-        let s = String(v).toLowerCase().trim();
-        s = s.replace(/[€\s]/g,'').replace(/km/g,'');
-        s = s.replace(/\./g,'').replace(/,/g,'.');
-        const n = Number(s);
-        return Number.isFinite(n) ? n : NaN;
-      }
+  <footer>
+    © <span id="year"></span> Mi Sitio. Todos los derechos reservados.
+  </footer>
 
-      function yearColor(y, low, high){
-        if (y == null || isNaN(low) || isNaN(high) || high <= low) return '#3b82f6';
-        const t = (y - low) / (high - low); // 0..1
-        const sat = 85 * (1 - t);
-        const light = 60 + 35 * t;
-        return `hsla(210, ${sat}%, ${light}%, 0.98)`;
-      }
+  <script>
+    // Año dinámico en el footer
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-      function buildDatasets(items){
-        const withYear = items.filter(d => d.year != null);
-        const noYear = items.filter(d => d.year == null);
-        const years = withYear.map(d => Number(d.year)).filter(v => !Number.isNaN(v));
-        const yLow = years.length ? Math.min(...years) : null;
-        const yHigh = years.length ? Math.max(...years) : null;
+    // Slideshow simple con transición de desvanecimiento
+    (function(){
+      const img = document.getElementById('slide');
+      const rutas = [
+        '/data/img/moto_1.jpg',
+        '/data/img/moto_2.jpg',
+        '/data/img/moto_3.jpg',
+        '/data/img/moto_4.jpg',
+        '/data/img/moto_5.jpg',
+        '/data/img/moto_6.jpg',
+        '/data/img/moto_7.jpg'
+    
+      ];
+      // Precarga
+      rutas.forEach(src => { const i = new Image(); i.src = src; });
 
-        const makePoint = (d) => ({
-          x: toNumberES(d.km),
-          y: toNumberES(d.price),
-          url: d.url || null,
-          km_fmt: fmtKm(d.km),
-          precio_fmt: fmtEur(d.price),
-          year_fmt: d.year != null ? String(d.year) : '-'
-        });
-
-        const normal = withYear.filter(d => d.tag === 'normal').map(d => ({ ...makePoint(d), backgroundColor: yearColor(d.year, yLow, yHigh), borderColor: '#ffffff', borderWidth: 1.5 }));
-        const chollo = withYear.filter(d => d.tag === 'chollo').map(d => ({ ...makePoint(d), backgroundColor: green, borderColor: '#ffffff', borderWidth: 1.8 }));
-        const caro   = withYear.filter(d => d.tag === 'caro'  ).map(d => ({ ...makePoint(d), backgroundColor: red,   borderColor: '#ffffff', borderWidth: 1.8 }));
-        const sinAnno = noYear.map(d => ({ ...makePoint(d), backgroundColor: grayPoint, borderColor: '#ffffff', borderWidth: 1.5 }));
-
-        return { normal, chollo, caro, sinAnno, yLow, yHigh };
-      }
-
-      function computeEq(items){
-        const found = items.find(d => typeof d.eq_text === 'string' && d.eq_text);
-        return found ? found.eq_text : '';
-      }
-
-      function extractFit(items){
-        const withFit = items.find(d => Array.isArray(d.fit_x) && Array.isArray(d.fit_y));
-        if (!withFit) return null;
-        const xy = withFit.fit_x.map((x, i) => ({ x: toNumberES(x), y: toNumberES(withFit.fit_y[i]) }))
-          .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
-        return xy.length ? xy : null;
-      }
-
-      function buildChart(items, marca, modelo){
-        const { normal, chollo, caro, sinAnno } = buildDatasets(items);
-        const fit = extractFit(items);
-        const eq = computeEq(items);
-
-        $mm.textContent = `${marca || ''} ${modelo || ''}`.trim() || '-';
-        $eq.textContent = eq || '';
-        $msg.style.display = 'none';
-
-        const datasets = [];
-
-        // Banda y curva de ajuste
-        if (fit) {
-          const residuals = items.map(d => toNumberES(d.residual)).filter(v => Number.isFinite(v));
-          let sigma = 0;
-          if (residuals.length >= 3) {
-            const sorted = residuals.slice().sort((a,b)=>a-b);
-            const median = sorted[Math.floor(sorted.length/2)];
-            const absDev = residuals.map(v => Math.abs(v - median)).sort((a,b)=>a-b);
-            const mad = absDev[Math.floor(absDev.length/2)] || 0;
-            const stddev = (() => { const m = residuals.reduce((s,v)=>s+v,0)/residuals.length; const vv = residuals.reduce((s,x)=>s+(x-m)*(x-m),0)/residuals.length; return Math.sqrt(vv); })();
-            sigma = mad > 0 ? 1.4826 * mad : stddev;
-          }
-          if (sigma > 0) {
-            const z = 1.96;
-            const bandHigh = fit.map(p => ({ x: p.x, y: p.y + z * sigma }));
-            const bandLow  = fit.map(p => ({ x: p.x, y: p.y - z * sigma }));
-            datasets.push({ label: 'Band High', type: 'line', data: bandHigh, parsing: false, borderColor: 'rgba(0,0,0,0)', pointRadius: 0, tension: 0 });
-            datasets.push({ label: 'Band Low',  type: 'line', data: bandLow,  parsing: false, borderColor: 'rgba(0,0,0,0)', pointRadius: 0, tension: 0, fill: { target: '-1' }, backgroundColor: 'rgba(226,232,240,0.10)' });
-          }
-          datasets.push({ label: 'Ajuste', type: 'line', data: fit, parsing: false, borderColor: blue, borderWidth: 2.5, pointRadius: 0, tension: 0 });
-        }
-
-        }
-// Puntos
-        const normalBG  = normal.map(p => p.backgroundColor || '#3b82f6');
-        const cholloBG  = chollo.map(p => p.backgroundColor || green);
-        const caroBG    = caro.map(p => p.backgroundColor   || red);
-        const sinAnnoBG = sinAnno.map(p => p.backgroundColor || grayPoint);
-        const whiteBordersN = normal.map(() => blue);
-        const whiteBordersE = chollo.map(() => '#166534');
-        const whiteBordersC = caro.map(() => '#7f1d1d');
-        const whiteBordersS = sinAnno.map(() => blue);
-
-        datasets.push(
-          { label: 'Normal', data: normal, parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: normalBG, pointBorderColor: whiteBordersN, pointBorderWidth: 1 },
-          { label: 'Chollo', data: chollo, parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: cholloBG, pointBorderColor: whiteBordersE, pointBorderWidth: 1 },
-          { label: 'Timo',   data: caro,   parsing: false, type: 'scatter', showLine: false, pointRadius: 6, pointHoverRadius: 7, pointBackgroundColor: caroBG, pointBorderColor: whiteBordersC, pointBorderWidth: 1 },
-          { label: 'Sin año',data: sinAnno,parsing: false, type: 'scatter', showLine: false, pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: sinAnnoBG, pointBorderColor: whiteBordersS, pointBorderWidth: 1 }
-        );
-
-        if (![...normal, ...chollo, ...caro, ...sinAnno].length && !fit) {
-          $msg.textContent = 'No hay puntos válidos para graficar (revisa km/precio).';
-          $msg.style.display = '';
-          if (window.chart) { try { window.chart.destroy(); } catch {} }
-          return;
-        }
-
-        if (window.chart) { try { window.chart.destroy(); } catch {} }
-        try {
-          const ctx2d = canvas.getContext('2d');
-          window.chart = new Chart(ctx2d, {
-            type: 'scatter',
-            data: { datasets },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                x: {
-                  title: { display: true, text: 'Kilómetros recorridos (km)', color: textColor },
-                  grid: { color: gridColor },
-                  ticks: { color: textColor, callback: (v) => Number(v).toLocaleString('es-ES') }
-                },
-                y: {
-                  title: { display: true, text: 'Precio (€)', color: textColor },
-                  grid: { color: gridColor },
-                  ticks: { color: textColor, callback: (v) => Number(v).toLocaleString('es-ES') }
-                }
-              },
-              plugins: {
-                legend: { labels: { color: textColor } },
-                tooltip: {
-                  callbacks: {
-                    label(ctx){
-                      const p = ctx.raw || {};
-                      const base = `${ctx.dataset.label || ''}: `;
-                      return [
-                        base + `${p.km_fmt || ''} · ${p.precio_fmt || ''}`,
-                        `Año: ${p.year_fmt || '-'}`,
-                        p.url ? `URL: ${p.url}` : ''
-                      ].filter(Boolean);
-                    }
-                  }
-                }
-              },
-              onClick(evt){
-                const points = window.chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-                if (!points.length) return;
-                const ds = window.chart.data.datasets[points[0].datasetIndex];
-                const p = ds.data[points[0].index];
-                if (p && p.url) window.open(p.url, '_blank');
-              }
-            }
-          });
-          // Asegurar que el canvas tiene medidas después del layout inicial
-          queueMicrotask(() => window.chart && window.chart.resize());
-        } catch (err) {
-          console.error('Chart init error', err);
-          $msg.textContent = 'Error creando el gráfico';
-          $msg.style.display = '';
-        }
-      }
-
-      async function cargar(){
-        const marca = $marca.value.trim();
-        const modelo = $modelo.value.trim();
-        $mm.textContent = `${marca} ${modelo}`.trim() || '-';
-        $eq.textContent = '';
-        $msg.style.display = 'none';
-        if (!marca || !modelo) {
-          $msg.textContent = 'Introduce marca y modelo';
-          $msg.style.display = '';
-          return;
-        }
-        try {
-          const url = `/api/plot_price_km_by_year_json?marca=${encodeURIComponent(marca)}&modelo=${encodeURIComponent(modelo)}`;
-          const res = await fetch(url, { cache: 'no-cache' });
-          if (!res.ok) throw new Error(`Error ${res.status}: no se pudo obtener datos`);
-          const items = await res.json();
-
-          if (!Array.isArray(items) || !items.length) {
-            throw new Error('Sin datos para graficar (la API devolvió lista vacía).');
-          }
-
-          // Normaliza nombres y parsea números robustamente
-          const data = items.map(d => ({
-            ...d,
-            km: d.km ?? d.kilometros ?? d.kilometers,
-            price: d.price != null ? d.price : d.precio
-          }))
-          .map(d => ({
-            ...d,
-            km: toNumberES(d.km),
-            price: toNumberES(d.price),
-          }))
-          .filter(d => Number.isFinite(d.km) && Number.isFinite(d.price));
-
-          if (!data.length) {
-            throw new Error('Datos recibidos pero sin km/precio numéricos.');
-          }
-
-          buildChart(data, marca, modelo);
-        } catch (e) {
-          console.error(e);
-          $msg.textContent = (e && e.message) ? e.message : 'Error cargando datos';
-          $msg.style.display = '';
-          if (window.chart) { try { window.chart.destroy(); } catch {} }
-        }
-      }
-
-      document.getElementById('cargar').addEventListener('click', cargar);
-      // Carga inicial con los valores por defecto
-      cargar();
-    </script>
-  </body>
+      let idx = 0;
+      const cambiar = () => {
+        idx = (idx + 1) % rutas.length;
+        // animación fade
+        img.classList.add('fade-out');
+        setTimeout(() => { img.src = rutas[idx]; img.classList.remove('fade-out'); }, 800);
+      };
+      // Cambia cada 3.5s
+      setInterval(cambiar, 3500);
+    })();
+  </script>
+</body>
 </html>

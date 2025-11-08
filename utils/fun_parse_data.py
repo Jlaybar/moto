@@ -151,8 +151,8 @@ def get_html_from_json(
 # Redefinición: get_txt_between_from_html para trabajar sobre contenido_html
 def get_txt_between_from_html(
     contenido_html: Any,
-    ini_text: str ='"items":[{"bodyTypeId":',
-    fin_text: str = '}],"totalPages"'
+    ini_text: str,
+    fin_text: str
 ) -> List[str]:
     """Extrae, para cada HTML, el bloque entre `inicio` y `fin` y reconstruye \"items\": [...].
 
@@ -299,41 +299,10 @@ def get_parse_item(extrae_items: Union[str, List[str]], extrac_list: List[str] =
     return resultados
 
 
-def get_items_json (marca, modelo) -> int:
 
-    """Ejecución ad-hoc: carga JSON por rutas y extrae `items`."""
+def get_num_pages (marca, modelo,path) -> int:
 
-    PATH_ROW = f"data/raw/{marca}/{modelo}"
-
-    p = Path(PATH_ROW)
-    files_json = []
-    if p.is_file() or p.suffix.lower() == '.json':
-        if p.suffix.lower() != '.json':
-            p = p.with_suffix('.json')
-        files_json = [p]
-    elif p.is_dir():
-        files_json = list_json_flies(p, recursivo=False)
-    else:
-        candidate = p.with_suffix('.json')
-        if candidate.exists():
-            files_json = [candidate]
-        else:
-            print('Ruta no valida')
-            return []
-
-    print(f"✅Cargados {len(files_json)} archivo(s) JSON")
-    #-------------------------------------------------------------------
-    content_json= read_json_files(files_json, estricto=False)
-    content_html = get_html_from_json(content_json)
-    content_items = get_txt_between_from_html(content_html)
-    items_json = get_parse_item(content_items , extrac_list=EXTRACT_LIST)
-    return items_json
-
-
-
-def get_num_pages (marca, modelo) -> int:
-
-    PATH_ROW = f"data/raw/{marca}/{modelo}"
+    PATH_ROW = f"{path}/{marca}/{modelo}"
 
     print("Path:", repr(PATH_ROW))
     p = Path(PATH_ROW)
@@ -399,10 +368,10 @@ def remove_duplicates_from_json(data ):
 
 
 
-def get_dict_marca ( marca: str):
+def get_dict_marca ( marca: str, path_dict: str, path_data:str):
 
      # Nombre del archivo de salida
-    file_path = f"dict/dict_{marca}.py"
+    file_path = f"{path_dict}/dict_{marca}.py"
 
     # ✅ Comprobar si ya existe
     if os.path.exists(file_path):
@@ -410,7 +379,7 @@ def get_dict_marca ( marca: str):
         return
 
 
-    PATH_ROW = f"data/raw/{marca}/tmp"
+    PATH_ROW = f"{path_data}/{marca}/tmp"
     p = Path(PATH_ROW)
     files_json = []
     if p.is_file() or p.suffix.lower() == '.json':
@@ -467,9 +436,3 @@ def get_dict_marca ( marca: str):
 
     print(f"✅ Diccionario de modelos de marca guardado en: {file_path}")
     return 
-
-
-
-
-#if __name__ == "__main__":
-#    main()

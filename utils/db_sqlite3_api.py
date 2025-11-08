@@ -22,7 +22,7 @@ app = Flask(__name__)
 
 # Environment variables (defaults for SQLite)
 DB_BACKEND = os.getenv("DB_BACKEND", "sqlite").lower()
-SQLITE_PATH = os.getenv("DB_FILE_PATH", "dev.db")
+SQLITE_PATH = os.getenv("DB_FILE_PATH", "data/dev.db")
 
 def get_db_connection(db_path: Optional[str] = None):
     """
