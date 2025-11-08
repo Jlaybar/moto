@@ -1,0 +1,39 @@
+# Variables
+@host = http://localhost:5000
+
+### List available models (OpenAI passthrough)
+GET {{host}}/models/chatgpt
+
+### Error de modelo
+POST {{host}}/api/moto/elasticity
+Content-Type: application/json
+
+{
+  "marca": "error",
+  "modelo": "x-adv",
+  "delete_json": 0
+}
+
+### Error de marca
+POST {{host}}/api/moto/elasticity
+Content-Type: application/json
+
+{
+  "marca": "bmw",
+  "modelo": "t-max 530",
+  "delete_json": 0
+}
+
+
+### Same call with explicit paths (optional)
+POST {{host}}/api/moto/elasticity
+Content-Type: application/json
+
+{
+  "marca": "honda",
+  "modelo": "x-adv",
+  "delete_json": 0,
+  "path_dict": "dict/moto",
+  "path_data": "data/moto/raw",
+  "path_model": "data/moto/model"
+}

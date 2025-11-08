@@ -125,8 +125,8 @@
       async function loadModelsIndex(){
         if (MODELS_INDEX_CACHE) return MODELS_INDEX_CACHE;
         const tries = [
-          '/api/models_index',
-          '/data/model/models_index.json'
+          '/api/moto_models_index',
+          '/data/moto/model/models_index.json'
         ];
         for (const url of tries){
           try {
@@ -436,7 +436,7 @@
           return;
         }
         try {
-          const url = `/api/model/${encodeURIComponent(marca)}/${encodeURIComponent(modelo)}`;
+          const url = `/api/moto/model/${encodeURIComponent(marca)}/${encodeURIComponent(modelo)}`;
           const res = await fetch(url, { cache: 'no-cache' });
           if (!res.ok) throw new Error(`Error ${res.status}: no se pudo obtener datos`);
           const items = await res.json();

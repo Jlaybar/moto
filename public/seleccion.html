@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enrutamiento · Moto · Casa · Hotel</title>
+<style>
+:root{
+  --bg: #0f172a;        /* slate-900 */
+  --card: #111826;      /* near slate-900 */
+  --card-2: #0b1220;
+  --muted: #94a3b8;     /* slate-400 */
+  --text: #e2e8f0;      /* slate-200 */
+  --primary: #22d3ee;   /* cyan-400 */
+  --primary-2: #06b6d4; /* cyan-500 */
+  --ring: rgba(34,211,238,.35);
+  --error: #f87171;     /* red-400 */
+  --ok: #34d399;        /* emerald-400 */
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+  background: radial-gradient(1200px 1200px at 10% -10%, rgba(34,211,238,.08), transparent 50%) , var(--bg);
+  color: var(--text);
+}
+
+.container{
+  max-width: 980px;
+  margin: 40px auto;
+  padding: 24px;
+}
+
+.header{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  margin-bottom: 22px;
+}
+.header h1{
+  margin:0;
+  font-size: clamp(22px,4vw,32px);
+  letter-spacing:.3px;
+}
+.header .hint{
+  color: var(--muted);
+  font-size: .95rem;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+.card{
+  grid-column: 1 / -1;
+  background: linear-gradient(180deg, var(--card), var(--card-2));
+  border: 1px solid rgba(148,163,184,.08);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(2,8,23,.35);
+  overflow: hidden;
+}
+
+/* Botones principales */
+.actions{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(148,163,184,.08);
+  background: linear-gradient(180deg, rgba(2,8,23,.35), transparent);
+}
+.action-btn{
+  --glow: 0 0 0 rgba(34,211,238,0);
+  position: relative;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,.12);
+  background: #0b1220;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: .2px;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .2s ease, background .2s ease;
+  box-shadow: var(--glow);
+}
+.action-btn:hover{
+  transform: translateY(-1px);
+  border-color: rgba(34,211,238,.45);
+  box-shadow: 0 6px 24px rgba(34,211,238,.12), inset 0 0 0 1px rgba(34,211,238,.12);
+}
+.action-btn[aria-expanded="true"]{
+  background: linear-gradient(180deg, rgba(34,211,238,.10), rgba(34,211,238,.05));
+  border-color: rgba(34,211,238,.65);
+  box-shadow: 0 10px 30px rgba(34,211,238,.22), inset 0 0 0 1px rgba(34,211,238,.25);
+}
+
+/* Secciones desplegables */
+.section{
+  border-top: 1px dashed rgba(148,163,184,.12);
+  padding: 0 18px;
+}
+.section-inner{
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .35s ease;
+}
+.section.open .section-inner{ /* max-height grande para animación */
+  max-height: 1000px;
+}
+.form{
+  display:grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  padding: 18px 0 22px;
+}
+
+/* Inputs */
+.field{
+  grid-column: span 12;
+  display:flex; flex-direction:column; gap:8px;
+}
+.label{
+  font-size:.9rem; color: var(--muted); letter-spacing:.2px;
+}
+.input, .select{
+  width:100%;
+  padding:12px 12px;
+  border-radius: 12px;
+  background:#0a1220;
+  border:1px solid rgba(148,163,184,.18);
+  color: var(--text);
+  outline: none;
+  transition: box-shadow .15s ease, border-color .2s ease, background .2s ease;
+}
+.input:focus, .select:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+.help{ color: var(--muted); font-size:.85rem }
+
+/* Acciones del formulario */
+.form-actions{
+  grid-column: span 12;
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;
+  padding-top: 6px;
+}
+.btn{
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight:700;
+  letter-spacing:.25px;
+  border:1px solid transparent;
+  cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease, background .2s ease, border-color .2s ease;
+}
+.btn-primary{
+  background: linear-gradient(180deg, var(--primary), var(--primary-2));
+  color:#071723;
+  box-shadow: 0 10px 26px rgba(34,211,238,.28);
+}
+.btn-primary:hover{ transform: translateY(-1px) }
+.btn-ghost{
+  background: transparent;
+  color: var(--text);
+  border-color: rgba(148,163,184,.22);
+}
+.btn-ghost:hover{ border-color: rgba(34,211,238,.45) }
+
+/* Responsivo: dos y tres columnas en pantallas anchas */
+@media(min-width:700px){
+  .field.span6{ grid-column: span 6 }
+  .field.span4{ grid-column: span 4 }
+  .field.span3{ grid-column: span 3 }
+}
+
+/* Iconos */
+.icon{ width:18px; height:18px; display:inline-block }
+
+/* Mensajería */
+.toast{
+  position: fixed; bottom: 18px; right: 18px;
+  background: #0b1220;
+  border: 1px solid rgba(34,211,238,.45);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(2,8,23,.55);
+  opacity: 0; transform: translateY(6px);
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+}
+.toast.show{ opacity: 1; transform: translateY(0) }
+.toast.success{ border-color: var(--ok) }
+.toast.error{ border-color: var(--error) }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Enrutamiento</h1>
+      <div class="hint">Elige una opción para introducir la información requerida.</div>
+    </div>
+
+    <section class="card">
+      <!-- Botones principales -->
+      <div class="actions" role="tablist" aria-label="Opciones de enrutamiento">
+        <button class="action-btn" id="btn-moto" role="tab" aria-controls="sec-moto" aria-expanded="false">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm14 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM10 15h4m-6-3 3-4h3l2 3h3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Moto
+        </button>
+        <button class="action-btn" id="btn-casa" role="tab" aria-controls="sec-casa" aria-expanded="false">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11.5 12 4l9 7.5M5 10.5V20h14v-9.5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Casa
+        </button>
+        <button class="action-btn" id="btn-hotel" role="tab" aria-controls="sec-hotel" aria-expanded="false">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V6a2 2 0 0 1 2-2h12v16M4 12h16M8 8h1m3 0h1m3 0h1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Hotel
+        </button>
+      </div>
+
+      <!-- Sección: Moto -->
+      <div id="sec-moto" class="section" role="tabpanel" aria-labelledby="btn-moto" aria-hidden="true">
+        <div class="section-inner">
+          <form class="form" id="form-moto" novalidate>
+            <div class="field span6">
+              <label for="moto-marca" class="label">Marca</label>
+              <input class="input" id="moto-marca" name="marca" placeholder="Ej. Yamaha, Honda…" required>
+              <div class="help">Introduce la marca de la moto.</div>
+            </div>
+            <div class="field span6">
+              <label for="moto-modelo" class="label">Modelo</label>
+              <input class="input" id="moto-modelo" name="modelo" placeholder="Ej. MT-07, CB500…" required>
+              <div class="help">Introduce el modelo específico.</div>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-ghost" data-reset="form-moto">Borrar</button>
+              <button type="submit" class="btn btn-primary">Enviar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Sección: Casa -->
+      <div id="sec-casa" class="section" role="tabpanel" aria-labelledby="btn-casa" aria-hidden="true">
+        <div class="section-inner">
+          <form class="form" id="form-casa" novalidate>
+            <div class="field span6">
+              <label for="casa-pais" class="label">País</label>
+              <input class="input" id="casa-pais" name="pais" placeholder="Ej. España, México…" required>
+              <div class="help">Introduce el país donde se encuentra la vivienda.</div>
+            </div>
+            <div class="field span6">
+              <label for="casa-cp" class="label">Código Postal</label>
+              <input class="input" id="casa-cp" name="cp" inputmode="numeric" pattern="\\d{3,10}" placeholder="Ej. 28013" required>
+              <div class="help">Solo números, entre 3 y 10 dígitos.</div>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-ghost" data-reset="form-casa">Borrar</button>
+              <button type="submit" class="btn btn-primary">Enviar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Sección: Hotel -->
+      <div id="sec-hotel" class="section" role="tabpanel" aria-labelledby="btn-hotel" aria-hidden="true">
+        <div class="section-inner">
+          <form class="form" id="form-hotel" novalidate>
+            <div class="field span4">
+              <label for="hotel-pais" class="label">País</label>
+              <input class="input" id="hotel-pais" name="pais" placeholder="Ej. España" required>
+            </div>
+            <div class="field span4">
+              <label for="hotel-ciudad" class="label">Ciudad</label>
+              <input class="input" id="hotel-ciudad" name="ciudad" placeholder="Ej. Madrid" required>
+            </div>
+            <div class="field span4">
+              <label for="hotel-llegada" class="label">Fecha de llegada</label>
+              <input class="input" id="hotel-llegada" name="llegada" type="date" required>
+            </div>
+            <div class="field span4">
+              <label for="hotel-salida" class="label">Fecha de salida</label>
+              <input class="input" id="hotel-salida" name="salida" type="date" required>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-ghost" data-reset="form-hotel">Borrar</button>
+              <button type="submit" class="btn btn-primary">Enviar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* --------- utilidades UI --------- */
+const qs = (s, el=document) => el.querySelector(s);
+const qsa = (s, el=document) => [...el.querySelectorAll(s)];
+const toast = (msg, type='success') => {
+  const el = qs('#toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type==='error'?'error':'success');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.classList.remove('show') }, 2600);
+};
+
+/* --------- lógica de secciones (acordeón) --------- */
+const sections = {
+  moto: {btn: qs('#btn-moto'),  panel: qs('#sec-moto')},
+  casa: {btn: qs('#btn-casa'),  panel: qs('#sec-casa')},
+  hotel:{btn: qs('#btn-hotel'), panel: qs('#sec-hotel')},
+};
+
+function closeAll(exceptKey){
+  Object.entries(sections).forEach(([key, {btn, panel}])=>{
+    const open = key === exceptKey && !panel.classList.contains('open');
+    if(open){
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden','false');
+      btn.setAttribute('aria-expanded','true');
+    }else{
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden','true');
+      sections[key].btn.setAttribute('aria-expanded','false');
+    }
+  });
+}
+
+Object.entries(sections).forEach(([key, {btn}])=>{
+  btn.addEventListener('click', ()=> closeAll(key));
+});
+
+/* --------- validación y envío simulado --------- */
+function handleSubmit(formId, buildPayload){
+  const form = qs('#'+formId);
+  form.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    if(!form.checkValidity()){
+      // Forzar estilos nativos de validación
+      qsa('input,select', form).forEach(i=> i.reportValidity());
+      toast('Revisa los campos requeridos.', 'error');
+      return;
+    }
+    const payload = buildPayload(new FormData(form));
+    // Aquí podrías hacer fetch('/api', { method:'POST', body: JSON.stringify(payload) })
+    console.log('Payload '+formId, payload);
+    toast('Información enviada correctamente.');
+    form.reset();
+  });
+}
+
+handleSubmit('form-moto', (fd)=>({
+  tipo: 'moto',
+  marca: fd.get('marca')?.trim(),
+  modelo: fd.get('modelo')?.trim()
+}));
+
+handleSubmit('form-casa', (fd)=>({
+  tipo: 'casa',
+  pais: fd.get('pais')?.trim(),
+  cp: fd.get('cp')?.trim()
+}));
+
+handleSubmit('form-hotel', (fd)=>{
+  const llegada = fd.get('llegada');
+  const salida  = fd.get('salida');
+  if(llegada && salida && new Date(salida) <= new Date(llegada)){
+    toast('La fecha de salida debe ser posterior a la de llegada.', 'error');
+    throw new Error('Rango de fechas inválido');
+  }
+  return {
+    tipo: 'hotel',
+    pais: fd.get('pais')?.trim(),
+    ciudad: fd.get('ciudad')?.trim(),
+    llegada, salida
+  };
+});
+
+/* --------- botones "Borrar" --------- */
+qsa('[data-reset]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const form = qs('#'+btn.dataset.reset);
+    form.reset();
+    toast('Formulario limpiado.');
+  });
+});
+
+/* --------- accesibilidad: abrir la primera sección por defecto --------- */
+closeAll('moto');
+</script>
+</body>
+</html>

@@ -188,11 +188,11 @@ def get_moto_model_json (marca:str,
 
 def get_moto_elasticity (MARCA: str,
                         MODELO: str, 
-                        path_dict:str,
-                        path_data:str,
-                        path_model:str,
+                        path_dict:str='dict/moto/',
+                        path_data:str='data/moto/raw',
+                        path_model:str='data/moto/model',
                         delete_json: int = 0):
-
+    
     # -----------------------------------------------------------------
     # Paso 01-  Creamos el Dicionario  
     #-----------------------------------------------------------------
@@ -203,26 +203,34 @@ def get_moto_elasticity (MARCA: str,
     if (marca =='No existe') or (modelo =='No existe'):
         return
 
-    # -----------------------------------------------------------------
-    # Paso 02-  Extraccion de cadena HTML
-    #-----------------------------------------------------------------
-    get_moto_data (marca, modelo, path_data, delete_json)
-         
-    # -----------------------------------------------------------------
-    # Paso 03 -  Parseo de los datos 
-    #-----------------------------------------------------------------
-    items_json = get_moto_items_json ( marca,modelo, path_data )
-    if len(items_json)==0:
-        return
-    # ----------------------------------------------------------------
-    # Paso 04 - Guardar model_json en data/model/marca/modelo.json
-    #-----------------------------------------------------------------
-    model_json = get_moto_model_json(marca, modelo,items_json,path_model) 
-    if len(model_json)==0:
-        return
-    # ----------------------------------------------------------------
-    # Paso 05 - creacion del indice de modelos
-    #-----------------------------------------------------------------
-    save_models_index(f'{path_model}/models_index.json', path_model)
+    path_modelo=f'{path_model}/{marca}/{modelo}.json'
+
+    if not os.path.exists(path_modelo):
+
+        print(f"❌ No se encontró el archivo JSON en la ruta: {path_modelo}")
+        # -----------------------------------------------------------------
+        # Paso 02-  Extraccion de cadena HTML
+        #-----------------------------------------------------------------
+        get_moto_data (marca, modelo, path_data, delete_json)
+            
+        # -----------------------------------------------------------------
+        # Paso 03 -  Parseo de los datos 
+        #-----------------------------------------------------------------
+        items_json = get_moto_items_json ( marca,modelo, path_data )
+        if len(items_json)==0:
+            return
+        # ----------------------------------------------------------------
+        # Paso 04 - Guardar model_json en data/model/marca/modelo.json
+        #-----------------------------------------------------------------
+        model_json = get_moto_model_json(marca, modelo,items_json,path_model) 
+        if len(model_json)==0:
+            return
+        # ----------------------------------------------------------------
+        # Paso 05 - creacion del indice de modelos
+        #-----------------------------------------------------------------
+        save_models_index(f'{path_model}/models_index.json', path_model)
+    
+    else: 
+        print(f"✅ El archivo JSON existe en  la ruta: {path_modelo}")
 
     return 

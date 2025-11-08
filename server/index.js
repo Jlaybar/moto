@@ -222,11 +222,11 @@ function resolveModelPath(marca, modelo) {
     .replace(/-+/g, '-')
     .replace(/^[-_]+|[-_]+$/g, '');
   // Construimos ruta
-  const filePath = path.join(__dirname, '..', 'data', 'model', safeMarca, `${safeModelo}.json`);
+  const filePath = path.join(__dirname, '..', 'data', 'moto', 'model', safeMarca, `${safeModelo}.json`);
   return filePath;
 }
 
-app.get('/api/model/:marca/:modelo', (req, res) => {
+app.get('/api/moto/model/:marca/:modelo', (req, res) => {
   try {
     const filePath = resolveModelPath(req.params.marca, req.params.modelo);
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'not found' });
@@ -240,9 +240,9 @@ app.get('/api/model/:marca/:modelo', (req, res) => {
 // Ruta legacy eliminada: /api/plot_price_km_by_year_json (usar /api/model/:marca/:modelo)
 
 // Índice de modelos estimados: devuelve data/model/models_index.json (o fallback a data/models_index.json)
-app.get('/api/models_index', (req, res) => {
+app.get('/api/moto_models_index', (req, res) => {
   try {
-    const filePath = path.join(__dirname, '..', 'data', 'model', 'models_index.json');
+    const filePath = path.join(__dirname, '..', 'data', 'moto', 'model', 'models_index.json');
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'models index not found' });
     res.sendFile(filePath);
   } catch (e) {
@@ -265,6 +265,13 @@ app.get(['/modelo', '/modelo.html'], (req, res) => {
   const page = path.join(__dirname, '..', 'public', 'modelo.html');
   if (fs.existsSync(page)) return res.sendFile(page);
   return res.status(404).send('public/modelo.html no encontrado');
+});
+
+// Serve seleccion.html desde /seleccion y /seleccion.html
+app.get(['/seleccion', '/seleccion.html'], (req, res) => {
+  const page = path.join(__dirname, '..', 'public', 'seleccion.html');
+  if (fs.existsSync(page)) return res.sendFile(page);
+  return res.status(404).send('public/seleccion.html no encontrado');
 });
 
 // Ruta a mensaje: redirige al servicio Python (puerto 5000)

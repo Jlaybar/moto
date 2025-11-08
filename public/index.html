@@ -189,5 +189,17 @@
       setInterval(cambiar, 3500);
     })();
   </script>
+  <script>
+    // Redirección del CTA "Empecemos" a /seleccion
+    (function(){
+      const cta = document.querySelector('.cta');
+      if (cta) {
+        cta.addEventListener('click', function(ev){
+          ev.preventDefault();
+          window.location.href = '/seleccion';
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
