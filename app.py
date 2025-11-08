@@ -149,6 +149,37 @@ async def list_models():
         raise HTTPException(status_code=500, detail=f"Error al obtener modelos: {str(e)}")
 
 # ----------------------------------------------------
+#        Moto: elasticidad (GET simplificado)
+# ----------------------------------------------------
+try:
+    from utils.fun_main import get_moto_elasticity as moto_elasticity_run
+except Exception:
+    moto_elasticity_run = None
+
+@app.get("/api/moto/elasticiadad")
+async def api_moto_elasticidad(marca: str, modelo: str, delete_json: int = 0):
+    if moto_elasticity_run is None:
+        raise HTTPException(status_code=500, detail="Módulo moto no disponible")
+    try:
+        # Ejecuta pipeline de elasticidad con rutas por defecto
+        moto_elasticity_run(marca, modelo, int(delete_json))
+        # Comprobar existencia del JSON resultante en rutas por defecto
+        path_model = os.path.join("data", "moto", "model")
+        model_path = os.path.join(path_model, marca, f"{modelo}.json")
+        exists = os.path.exists(model_path)
+        return {
+            "ok": True,
+            "marca": marca,
+            "modelo": modelo,
+            "delete_json": int(delete_json),
+            "model_path": model_path,
+            "exists": exists,
+        }
+    except Exception as e:
+        logger.exception("Fallo en /api/moto/elasticiadad")
+        raise HTTPException(status_code=500, detail=f"Error al construir modelo: {e}")
+
+# ----------------------------------------------------
 #        Moto: resolver marca y modelo
 # ----------------------------------------------------
 try:

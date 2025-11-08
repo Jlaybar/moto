@@ -197,22 +197,17 @@ def get_moto_model_json (marca:str,
 
 
 
-
-def get_moto_elasticity (MARCA: str,
-                        MODELO: str, 
-                        path_dict:str='dict/moto/',
+def get_moto_elasticity (marca: str,
+                        modelo: str, 
+                        delete_json: int = 0,
                         path_data:str='data/moto/raw',
-                        path_model:str='data/moto/model',
-                        delete_json: int = 0):
+                        path_model:str='data/moto/model'
+                        ):
     
     # -----------------------------------------------------------------
     # Paso 01-  Creamos el Dicionario  
     #-----------------------------------------------------------------
     # Extracion de la marca
-    
-    marca  = get_moto_marca  (MARCA,path_dict,path_data)
-
-    modelo = get_moto_modelo (marca, MODELO, path_dict)
 
     if (marca =='No existe') or (modelo =='No existe'):
         return
