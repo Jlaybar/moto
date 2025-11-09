@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -148,23 +148,23 @@
     <section class="hero">
       <h1 class="title">Elasticity </h1>
       <p class="subtitle">Un concepto matematico sencillo que perimite detectar oportunidades de compra</p>
-      <div class="frame" aria-label="Presentación de imágenes">
+      <div class="frame" aria-label="PresentaciÃƒÂ³n de imÃƒÂ¡genes">
         <img id="slide" src="/data/img/inicio01.jpg" alt="Imagen de inicio" />
       </div>
 
-      <a class="cta" href="modelo.html">¡Empecemos!</a>
+      <a class="cta" href="modelo.html">Ã‚Â¡Empecemos!</a>
     </section>
   </main>
 
   <footer>
-    © <span id="year"></span> Mi Sitio. Todos los derechos reservados.
+    Ã‚Â© <span id="year"></span> Mi Sitio. Todos los derechos reservados.
   </footer>
 
   <script>
-    // Año dinámico en el footer
+    // AÃƒÂ±o dinÃƒÂ¡mico en el footer
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Slideshow simple con transición de desvanecimiento
+    // Slideshow simple con transiciÃƒÂ³n de desvanecimiento
     (function(){
       const img = document.getElementById('slide');
       const rutas = [
@@ -183,7 +183,7 @@
       let idx = 0;
       const cambiar = () => {
         idx = (idx + 1) % rutas.length;
-        // animación fade
+        // animaciÃƒÂ³n fade
         img.classList.add('fade-out');
         setTimeout(() => { img.src = rutas[idx]; img.classList.remove('fade-out'); }, 800);
       };
@@ -192,7 +192,7 @@
     })();
   </script>
   <script>
-    // Redirección del CTA "Empecemos" a /seleccion
+    // RedirecciÃƒÂ³n del CTA "Empecemos" a /seleccion
     (function(){
       const cta = document.querySelector('.cta');
       if (cta) {
