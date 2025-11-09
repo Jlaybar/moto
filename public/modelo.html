@@ -17,6 +17,9 @@
       body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; display: grid; grid-template-rows: auto 1fr; }
       header { display:flex; align-items:center; gap:12px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid rgba(226,232,240,.08); }
       header h1 { font-size: 16px; margin: 0; color: var(--text); font-weight: 600; opacity: .95; }
+      .spacer { flex: 1; }
+      .btn-contact{ background: var(--accent); color: #06101a; border: 0; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-weight: 700; text-decoration: none; }
+      .btn-contact:hover{ filter: brightness(0.96); }
       .inputs { display:flex; gap:8px; align-items:center; margin-left: auto; }
       .panel .inputs {
         margin-left: 0;
@@ -43,6 +46,8 @@
       .title h2 { margin: 0; font-size: 15px; font-weight: 700; opacity: .95; }
       .title small { opacity: .8; }
       .eq { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity: .85; font-size: 12px; }
+      .brand-motos{ display:flex; justify-content:center; align-items:center; padding: 6px 0 4px; }
+      .brand-motos img{ display:block; height: 28px; width:auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
       .selector-hint{ color: rgba(226,232,240,.75); font-size: 12px; margin: 2px 0 6px 2px; }
       .chart-box{
         width: min(900px, 98vw);
@@ -76,10 +81,13 @@
   <body>
     <header>
       <img class="logo" src="/data/img/logo_6.png" alt="Elasticity" />
-      <h1>Precio vs Kilómetros</h1>
+      <h1>Elasticity</h1>
+      <div class="spacer"></div>
+      <a class="btn-contact" href="/public/contacto.html">Contacto</a>
     </header>
     <main>
       <div class="panel">
+        <div class="brand-motos"><a href="https://motos.coches.net/" target="_blank" rel="noopener"><img src="/data/img/motosnet.png" alt="Motos" /></a></div>
         <div class="selector-hint">Selecciona marca y modelo</div>
         <div class="inputs" style="padding:6px 8px; margin-bottom: 6px;">
           <label for="marca">Marca</label>
@@ -95,6 +103,7 @@
           </div>
           <div class="eq" id="eq"></div>
         </div>
+        
         <div class="row">
           <div class="card chart-card">
             <div class="chart-box">
@@ -118,6 +127,7 @@
             </div>
           </div>
         </div>
+        
         <div id="msg" class="error" style="display:none"></div>
       </div>
     </main>
