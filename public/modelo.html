@@ -14,12 +14,49 @@
       }
       * { box-sizing: border-box; }
       html, body { height: 100%; }
-      body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; display: grid; grid-template-rows: auto 1fr; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(1200px 1200px at 10% -10%, rgba(34,211,238,.08), transparent 50%),
+          url('/data/img/logo_5.png') left top / cover no-repeat fixed,
+          var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
       header { display:flex; align-items:center; gap:12px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid rgba(226,232,240,.08); }
       header h1 { font-size: 16px; margin: 0; color: var(--text); font-weight: 600; opacity: .95; }
       .spacer { flex: 1; }
-      .btn-contact{ background: var(--accent); color: #06101a; border: 0; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-weight: 700; text-decoration: none; }
-      .btn-contact:hover{ filter: brightness(0.96); }
+      /* Botón contacto con estilo de index (.links a) */
+      .btn-contact{
+        position: relative;
+        color: #9aa8bf; /* muted */
+        text-decoration: none;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,.18);
+        background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00));
+        transition: transform .18s ease, color .2s ease, box-shadow .2s ease, border-color .2s ease;
+        overflow: hidden;
+        isolation: isolate;
+      }
+      .btn-contact::before{
+        content: "";
+        position: absolute; inset: -1px; border-radius: inherit;
+        background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.25) 50%, transparent 60%);
+        transform: translateX(-120%);
+        transition: transform .5s ease;
+        pointer-events: none; z-index: -1;
+      }
+      .btn-contact:hover{
+        color: var(--text);
+        border-color: rgba(34,211,238,.45);
+        box-shadow: 0 0 12px rgba(34,211,238,.45), 0 0 28px rgba(6,182,212,.35), 0 0 48px rgba(6,182,212,.25);
+        transform: translateY(-1px);
+      }
+      .btn-contact:hover::before{ transform: translateX(120%); }
+      .btn-contact:focus-visible{ outline: none; box-shadow: 0 0 0 3px rgba(34,211,238,.45); }
       .inputs { display:flex; gap:8px; align-items:center; margin-left: auto; }
       .panel .inputs {
         margin-left: 0;
@@ -87,8 +124,10 @@
   </head>
   <body>
     <header>
-      <img class="logo" src="/data/img/logo_6.png" alt="Elasticity" />
-      <h1>Elasticity</h1>
+      <a href="/seleccion" title="Ir a Selección">
+        <img class="logo" src="/data/img/logo_6.png" alt="Elasticity" />
+      </a>
+    
       <div class="spacer"></div>
       <a class="btn-contact" href="/public/contacto.html">Contacto</a>
     </header>
