@@ -1,0 +1,8 @@
+*** Begin Patch
+*** Update File: public/modelo.html
+@@
+-      .inputs { display:flex; gap:8px; align-items:center; margin-left: auto; }
++      .inputs { display:flex; gap:8px; align-items:center; margin-left: auto; }
++      .panel .inputs { margin-left: 0; }
+*** End Patch
+

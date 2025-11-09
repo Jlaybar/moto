@@ -18,7 +18,22 @@
       header { display:flex; align-items:center; gap:12px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid rgba(226,232,240,.08); }
       header h1 { font-size: 16px; margin: 0; color: var(--text); font-weight: 600; opacity: .95; }
       .inputs { display:flex; gap:8px; align-items:center; margin-left: auto; }
+      .panel .inputs {
+        margin-left: 0;
+        gap: 10px;
+        padding: 8px 10px;
+        background: rgba(255,255,255,.03);
+        border: 1px solid rgba(226,232,240,.12);
+        border-radius: 8px;
+        transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+      }
+      .panel .inputs:hover{
+        background: rgba(255,255,255,.05);
+        border-color: rgba(34,211,238,.35);
+        box-shadow: 0 0 0 3px rgba(34,211,238,.08);
+      }
       .inputs input { background: #0b1328; color: var(--text); border: 1px solid rgba(226,232,240,.14); border-radius: 6px; padding: 6px 8px; min-width: 140px; }
+      .inputs select { background: #0b1328; color: var(--text); border: 1px solid rgba(226,232,240,.14); border-radius: 6px; padding: 6px 8px; min-width: 140px; }
       .inputs button { background: var(--accent); color: #06101a; border: 0; border-radius: 6px; padding: 7px 10px; cursor: pointer; font-weight: 600; }
       .inputs button:hover { filter: brightness(0.96); }
       main { display: grid; place-items: center; padding: 10px; }
@@ -28,6 +43,7 @@
       .title h2 { margin: 0; font-size: 15px; font-weight: 700; opacity: .95; }
       .title small { opacity: .8; }
       .eq { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity: .85; font-size: 12px; }
+      .selector-hint{ color: rgba(226,232,240,.75); font-size: 12px; margin: 2px 0 6px 2px; }
       .chart-box{
         width: min(900px, 98vw);
         aspect-ratio: 3 / 2; /* 900x600 */
@@ -59,16 +75,17 @@
   <body>
     <header>
       <h1>Precio vs Kilómetros</h1>
-      <div class="inputs">
-        <label for="marca">Marca</label>
-        <select id="marca"></select>
-        <label for="modelo">Modelo</label>
-        <select id="modelo"></select>
-        <button id="cargar">Cargar</button>
-      </div>
     </header>
     <main>
       <div class="panel">
+        <div class="selector-hint">Selecciona marca y modelo</div>
+        <div class="inputs" style="padding:6px 8px; margin-bottom: 6px;">
+          <label for="marca">Marca</label>
+          <select id="marca"></select>
+          <label for="modelo">Modelo</label>
+          <select id="modelo"></select>
+          <button id="cargar">Cargar</button>
+        </div>
         <div class="title">
           <div class="left">
             <h2>Relación Precio vs Kilometros</h2>
@@ -494,3 +511,6 @@
     </script>
   </body>
 </html>
+
+
+
