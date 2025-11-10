@@ -261,10 +261,10 @@ app.get(['/', '/index.html'], (req, res) => {
 });
 
 // Serve modelo.html desde /modelo y /modelo.html
-app.get(['/modelo', '/modelo.html'], (req, res) => {
-  const page = path.join(__dirname, '..', 'public', 'modelo.html');
+app.get(['/elasticity_moto', '/elasticity_moto.html'], (req, res) => {
+  const page = path.join(__dirname, '..', 'public', 'elasticity_moto.html');
   if (fs.existsSync(page)) return res.sendFile(page);
-  return res.status(404).send('public/modelo.html no encontrado');
+  return res.status(404).send('public/elasticity_moto.html no encontrado');
 });
 
 // Serve seleccion.html desde /seleccion y /seleccion.html

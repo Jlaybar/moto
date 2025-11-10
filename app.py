@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
@@ -156,7 +156,7 @@ try:
 except Exception:
     moto_elasticity_run = None
 
-@app.get("/api/moto/elasticiadad")
+@app.get("/api/moto/elasticity_moto")
 async def api_moto_elasticidad(marca: str, modelo: str, delete_json: int = 0):
     if moto_elasticity_run is None:
         raise HTTPException(status_code=500, detail="Módulo moto no disponible")
@@ -176,7 +176,7 @@ async def api_moto_elasticidad(marca: str, modelo: str, delete_json: int = 0):
             "exists": exists,
         }
     except Exception as e:
-        logger.exception("Fallo en /api/moto/elasticiadad")
+        logger.exception("Fallo en /api/moto/elasticity_moto")
         raise HTTPException(status_code=500, detail=f"Error al construir modelo: {e}")
 
 # ----------------------------------------------------

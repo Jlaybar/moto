@@ -17,7 +17,7 @@ GET {{host}}/api/moto/modelo?marca=honda&MODELO=x-adv
 GET {{host}}/api/moto/modelo?marca=bmw&MODELO=t-max%20530
 
 ### Ejecutar elasticidad (construir/actualizar modelo)
-GET {{host}}/api/moto/elasticiadad?marca=honda&modelo=x-adv
+GET {{host}}/api/moto/elasticity_moto?marca=honda&modelo=x-adv
 
 ### Ejecutar elasticidad forzando borrado previo del JSON
-GET {{host}}/api/moto/elasticiadad?marca=honda&modelo=x-adv&delete_json=1
+GET {{host}}/api/moto/elasticity_moto?marca=honda&modelo=x-adv&delete_json=1

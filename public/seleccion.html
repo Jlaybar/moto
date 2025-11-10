@@ -532,7 +532,7 @@ handleSubmit('form-moto', (fd)=>({
   // 3) Ejecutar elasticidad para preparar/actualizar el JSON del modelo
   let r3;
   try {
-    r3 = await fetch(`${API}/api/moto/elasticiadad?marca=${encodeURIComponent(marcaSlug)}&modelo=${encodeURIComponent(modeloSlug)}`, { cache: 'no-cache', signal: motoCtrl.signal });
+    r3 = await fetch(`${API}/api/moto/elasticity_moto?marca=${encodeURIComponent(marcaSlug)}&modelo=${encodeURIComponent(modeloSlug)}`, { cache: 'no-cache', signal: motoCtrl.signal });
   } catch (e) {
     if (e && e.name === 'AbortError') {
       toast('Proceso detenido por el usuario.', 'error');
@@ -552,7 +552,7 @@ handleSubmit('form-moto', (fd)=>({
   toast(`OK · Marca: ${marcaSlug} · Modelo: ${modeloSlug}`);
   // Redirigir a la página de modelo con marca/modelo preseleccionados
   setTimeout(() => {
-    window.location.href = `/modelo?marca=${encodeURIComponent(marcaSlug)}&modelo=${encodeURIComponent(modeloSlug)}`;
+    window.location.href = `/elasticity_moto?marca=${encodeURIComponent(marcaSlug)}&modelo=${encodeURIComponent(modeloSlug)}`;
   }, 350);
   form.reset();
   motoCtrl = null;
