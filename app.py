@@ -8,6 +8,7 @@ from datetime import datetime
 from fastapi.staticfiles import StaticFiles
 from pydantic import Field
 import re
+import os
 
 # Helpers para mensajes
 try:
@@ -138,7 +139,7 @@ async def ask_question(request: QuestionRequest):
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 # Endpoint para listar modelos disponibles
-@app.get("/models")
+@app.get("/models/chatgpt")
 async def list_models():
     try:
         models = client.models.list()
@@ -146,6 +147,68 @@ async def list_models():
         return {"available_models": model_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener modelos: {str(e)}")
+
+# ----------------------------------------------------
+#        Moto: elasticidad (GET simplificado)
+# ----------------------------------------------------
+try:
+    from utils.fun_main import get_moto_elasticity as moto_elasticity_run
+except Exception:
+    moto_elasticity_run = None
+
+@app.get("/api/moto/elasticiadad")
+async def api_moto_elasticidad(marca: str, modelo: str, delete_json: int = 0):
+    if moto_elasticity_run is None:
+        raise HTTPException(status_code=500, detail="Módulo moto no disponible")
+    try:
+        # Ejecuta pipeline de elasticidad con rutas por defecto
+        moto_elasticity_run(marca, modelo, int(delete_json))
+        # Comprobar existencia del JSON resultante en rutas por defecto
+        path_model = os.path.join("data", "moto", "model")
+        model_path = os.path.join(path_model, marca, f"{modelo}.json")
+        exists = os.path.exists(model_path)
+        return {
+            "ok": True,
+            "marca": marca,
+            "modelo": modelo,
+            "delete_json": int(delete_json),
+            "model_path": model_path,
+            "exists": exists,
+        }
+    except Exception as e:
+        logger.exception("Fallo en /api/moto/elasticiadad")
+        raise HTTPException(status_code=500, detail=f"Error al construir modelo: {e}")
+
+# ----------------------------------------------------
+#        Moto: resolver marca y modelo
+# ----------------------------------------------------
+try:
+    from utils.fun_main import get_moto_marca, get_moto_modelo
+except Exception:
+    get_moto_marca = None
+    get_moto_modelo = None
+
+@app.get("/api/moto/marca")
+async def api_moto_marca(MARCA: str):
+    if get_moto_marca is None:
+        raise HTTPException(status_code=500, detail="Módulo moto no disponible")
+    try:
+        marca = get_moto_marca(MARCA)
+        return {"input": MARCA, "marca": marca}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error resolviendo marca: {e}")
+
+@app.get("/api/moto/modelo")
+async def api_moto_modelo(marca: str, MODELO: str):
+    if get_moto_modelo is None:
+        raise HTTPException(status_code=500, detail="Módulo moto no disponible")
+    try:
+        modelo = get_moto_modelo(marca, MODELO)
+        return {"marca": marca, "input": MODELO, "modelo": modelo}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error resolviendo modelo: {e}")
+
+ 
 
 if __name__ == "__main__":
     import uvicorn
@@ -161,4 +224,3 @@ if __name__ == "__main__":
         port=Config.API_PORT,
         reload=True  # Solo para desarrollo
     )
-

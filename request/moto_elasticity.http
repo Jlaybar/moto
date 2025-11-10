@@ -1,0 +1,23 @@
+# Variables
+@host = http://localhost:5000
+
+### List available models (OpenAI passthrough)
+GET {{host}}/models/chatgpt
+
+### Resolver marca (ok)
+GET {{host}}/api/moto/marca?MARCA=Honda
+
+### Resolver marca (no existe)
+GET {{host}}/api/moto/marca?MARCA=MarcaInexistente
+
+### Resolver modelo (ok)
+GET {{host}}/api/moto/modelo?marca=honda&MODELO=x-adv
+
+### Resolver modelo (no existe para la marca)
+GET {{host}}/api/moto/modelo?marca=bmw&MODELO=t-max%20530
+
+### Ejecutar elasticidad (construir/actualizar modelo)
+GET {{host}}/api/moto/elasticiadad?marca=honda&modelo=x-adv
+
+### Ejecutar elasticidad forzando borrado previo del JSON
+GET {{host}}/api/moto/elasticiadad?marca=honda&modelo=x-adv&delete_json=1

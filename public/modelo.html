@@ -14,20 +14,94 @@
       }
       * { box-sizing: border-box; }
       html, body { height: 100%; }
-      body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; display: grid; grid-template-rows: auto 1fr; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(1200px 1200px at 10% -10%, rgba(34,211,238,.08), transparent 50%),
+          url('/data/img/logo_5.png') left top / cover no-repeat fixed,
+          var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
       header { display:flex; align-items:center; gap:12px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid rgba(226,232,240,.08); }
       header h1 { font-size: 16px; margin: 0; color: var(--text); font-weight: 600; opacity: .95; }
+      .spacer { flex: 1; }
+      /* Botón contacto con estilo de index (.links a) */
+      .btn-contact{
+        position: relative;
+        color: #9aa8bf; /* muted */
+        text-decoration: none;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,.18);
+        background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00));
+        transition: transform .18s ease, color .2s ease, box-shadow .2s ease, border-color .2s ease;
+        overflow: hidden;
+        isolation: isolate;
+      }
+      .btn-contact::before{
+        content: "";
+        position: absolute; inset: -1px; border-radius: inherit;
+        background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.25) 50%, transparent 60%);
+        transform: translateX(-120%);
+        transition: transform .5s ease;
+        pointer-events: none; z-index: -1;
+      }
+      .btn-contact:hover{
+        color: var(--text);
+        border-color: rgba(34,211,238,.45);
+        box-shadow: 0 0 12px rgba(34,211,238,.45), 0 0 28px rgba(6,182,212,.35), 0 0 48px rgba(6,182,212,.25);
+        transform: translateY(-1px);
+      }
+      .btn-contact:hover::before{ transform: translateX(120%); }
+      .btn-contact:focus-visible{ outline: none; box-shadow: 0 0 0 3px rgba(34,211,238,.45); }
       .inputs { display:flex; gap:8px; align-items:center; margin-left: auto; }
+      .panel .inputs {
+        margin-left: 0;
+        gap: 10px;
+        padding: 8px 10px;
+        background: var(--panel-2); /* fondo opaco */
+        border: 2px solid rgba(34,211,238,.55);
+        border-radius: 8px;
+        transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+      }
+      .panel .inputs:hover{
+        background: var(--panel-2);
+        border-color: rgba(34,211,238,.35);
+        box-shadow: 0 0 0 3px rgba(34,211,238,.08);
+      }
       .inputs input { background: #0b1328; color: var(--text); border: 1px solid rgba(226,232,240,.14); border-radius: 6px; padding: 6px 8px; min-width: 140px; }
+      .inputs select { background: #ffffff; color: #000000; border: 1px solid rgba(0,0,0,.25); border-radius: 6px; padding: 6px 8px; min-width: 140px; }
       .inputs button { background: var(--accent); color: #06101a; border: 0; border-radius: 6px; padding: 7px 10px; cursor: pointer; font-weight: 600; }
       .inputs button:hover { filter: brightness(0.96); }
       main { display: grid; place-items: center; padding: 10px; }
-      .panel { width: min(1200px, 98vw); border: 1px solid rgba(226,232,240,.08); border-radius: 10px; background: linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.86)); padding: 10px; }
+      .panel {
+        width: min(1200px, 98vw);
+        border: 2px solid rgba(56,189,248,.55); /* turquesa */
+        border-radius: 10px;
+        background: var(--panel); /* fondo opaco, sin transparencia */
+        padding: 10px;
+        box-shadow: inset 0 0 0 1px rgba(56,189,248,.18), 0 8px 24px rgba(56,189,248,.08);
+        transition: border-color .2s ease, box-shadow .2s ease, transform .15s ease;
+      }
+      .panel:hover {
+        border-color: rgba(56,189,248,.9);
+        box-shadow:
+          0 18px 48px 6px rgba(34,211,238,.28), /* glow turquesa externo */
+          0 14px 40px 2px rgba(2,8,23,.65),     /* profundidad oscura */
+          inset 0 0 0 1.5px rgba(56,189,248,.32);
+        transform: translateY(-1px);
+      }
       .title { display:flex; align-items: baseline; justify-content: space-between; padding: 4px 8px 8px; border-bottom: 1px dashed rgba(226,232,240,.1); }
       .title .left { display:flex; gap:12px; align-items: baseline; }
       .title h2 { margin: 0; font-size: 15px; font-weight: 700; opacity: .95; }
       .title small { opacity: .8; }
       .eq { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity: .85; font-size: 12px; }
+      .brand-motos{ display:flex; justify-content:center; align-items:center; padding: 6px 0 4px; }
+      .brand-motos img{ display:block; height: 28px; width:auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
+      .selector-hint{ color: rgba(226,232,240,.75); font-size: 12px; margin: 2px 0 6px 2px; }
       .chart-box{
         width: min(900px, 98vw);
         aspect-ratio: 3 / 2; /* 900x600 */
@@ -54,21 +128,29 @@
         .grad-wrap{ min-height:200px }
       }
     </style>
+<style>header img.logo{display:block;height:28px;width:auto}</style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   </head>
   <body>
     <header>
-      <h1>Precio vs Kilómetros</h1>
-      <div class="inputs">
-        <label for="marca">Marca</label>
-        <select id="marca"></select>
-        <label for="modelo">Modelo</label>
-        <select id="modelo"></select>
-        <button id="cargar">Cargar</button>
-      </div>
+      <a href="/seleccion" title="Ir a Selección">
+        <img class="logo" src="/data/img/logo_6.png" alt="Elasticity" />
+      </a>
+    
+      <div class="spacer"></div>
+      <a class="btn-contact" href="/public/contacto.html">Contacto</a>
     </header>
     <main>
       <div class="panel">
+        <div class="brand-motos"><a href="https://motos.coches.net/" target="_blank" rel="noopener"><img src="/data/img/motosnet.png" alt="Motos" /></a></div>
+        <div class="selector-hint">Selecciona marca y modelo</div>
+        <div class="inputs" style="padding:6px 8px; margin-bottom: 6px;">
+          <label for="marca">Marca</label>
+          <select id="marca"></select>
+          <label for="modelo">Modelo</label>
+          <select id="modelo"></select>
+          <button id="cargar">Cargar</button>
+        </div>
         <div class="title">
           <div class="left">
             <h2>Relación Precio vs Kilometros</h2>
@@ -76,6 +158,7 @@
           </div>
           <div class="eq" id="eq"></div>
         </div>
+        
         <div class="row">
           <div class="card chart-card">
             <div class="chart-box">
@@ -99,6 +182,7 @@
             </div>
           </div>
         </div>
+        
         <div id="msg" class="error" style="display:none"></div>
       </div>
     </main>
@@ -125,8 +209,8 @@
       async function loadModelsIndex(){
         if (MODELS_INDEX_CACHE) return MODELS_INDEX_CACHE;
         const tries = [
-          '/api/models_index',
-          '/data/model/models_index.json'
+          '/api/moto_models_index',
+          '/data/moto/model/models_index.json'
         ];
         for (const url of tries){
           try {
@@ -436,7 +520,7 @@
           return;
         }
         try {
-          const url = `/api/model/${encodeURIComponent(marca)}/${encodeURIComponent(modelo)}`;
+          const url = `/api/moto/model/${encodeURIComponent(marca)}/${encodeURIComponent(modelo)}`;
           const res = await fetch(url, { cache: 'no-cache' });
           if (!res.ok) throw new Error(`Error ${res.status}: no se pudo obtener datos`);
           const items = await res.json();
@@ -473,12 +557,29 @@
 
       document.getElementById('cargar').addEventListener('click', cargar);
       $marca.addEventListener('change', updateModelOptions);
-      // Carga inicial: poblar marcas, luego modelos, luego cargar
+      // Carga inicial: poblar marcas, aplicar query params si existen, luego cargar
       (async () => {
+        const params = new URLSearchParams(window.location.search || '');
+        const qMarca = (params.get('marca') || '').trim().toLowerCase();
+        const qModelo = (params.get('modelo') || '').trim().toLowerCase();
         await populateBrands();
+        if (qMarca) {
+          // si la marca existe en el select, usarla
+          const has = [...$marca.options].some(o => String(o.value).toLowerCase() === qMarca);
+          if (has) $marca.value = qMarca;
+        }
         await updateModelOptions();
+        if (qModelo) {
+          const hasM = [...$modelo.options].some(o => String(o.value).toLowerCase() === qModelo);
+          if (hasM) $modelo.value = qModelo;
+        }
         await cargar();
       })();
     </script>
   </body>
 </html>
+
+
+
+
+
